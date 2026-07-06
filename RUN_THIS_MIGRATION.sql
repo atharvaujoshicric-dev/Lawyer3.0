@@ -1,13 +1,8 @@
--- ════════════════════════════════════════════════════════
---  LexDesk FULL MIGRATION — run this entire file in
---  Supabase SQL Editor. Safe to run repeatedly.
--- ════════════════════════════════════════════════════════
+-- LexDesk Full Migration — paste entire file in Supabase SQL Editor → Run
 
--- ── Helper functions ─────────────────────────────────────────────────────
 create or replace function is_admin() returns boolean
 language sql security definer stable as $$
-  select exists(select 1 from profiles
-    where id=auth.uid() and role='admin' and approved=true);
+  select exists(select 1 from profiles where id=auth.uid() and role='admin' and approved=true);
 $$;
 
 create or replace function is_approved() returns boolean
@@ -17,14 +12,12 @@ $$;
 
 create or replace function user_has_note_share(p_note_id uuid, p_user_id uuid)
 returns boolean language sql security definer stable as $$
-  select exists(select 1 from note_shares
-    where note_id=p_note_id and shared_with=p_user_id);
+  select exists(select 1 from note_shares where note_id=p_note_id and shared_with=p_user_id);
 $$;
 
 create or replace function user_has_note_editor_share(p_note_id uuid, p_user_id uuid)
 returns boolean language sql security definer stable as $$
-  select exists(select 1 from note_shares
-    where note_id=p_note_id and shared_with=p_user_id and permission='editor');
+  select exists(select 1 from note_shares where note_id=p_note_id and shared_with=p_user_id and permission='editor');
 $$;
 
 create or replace function user_owns_note(p_note_id uuid, p_user_id uuid)
@@ -32,7 +25,17 @@ returns boolean language sql security definer stable as $$
   select exists(select 1 from notes where id=p_note_id and owner_id=p_user_id);
 $$;
 
--- ── v3.1 ─────────────────────────────────────────────────────────────────
+create or replace function user_in_group(p_group_id uuid, p_user_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists(select 1 from group_members where group_id=p_group_id and user_id=p_user_id);
+$$;
+
+create or replace function user_is_group_admin(p_group_id uuid, p_user_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists(select 1 from group_members where group_id=p_group_id and user_id=p_user_id and is_admin=true);
+$$;
+
+-- v3.1
 drop policy if exists "profiles_select_own_or_admin" on profiles;
 drop policy if exists "profiles_select_approved_or_self" on profiles;
 create policy "profiles_select_approved_or_self" on profiles for select
@@ -43,39 +46,34 @@ alter table tasks add constraint tasks_status_check
   check (status in ('open','in_progress','in_review','done','cancelled'));
 
 alter table messages add column if not exists edited_at timestamptz;
-alter table messages add column if not exists deleted   boolean default false;
+alter table messages add column if not exists deleted boolean default false;
 drop policy if exists "messages_update" on messages;
 create policy "messages_update" on messages for update
   using (sender_id=auth.uid() and created_at>(now()-interval '5 minutes'));
 
--- ── v3.2 ─────────────────────────────────────────────────────────────────
-alter table clients add column if not exists contact_id text
-  references clients(client_id);
+-- v3.2
+alter table clients add column if not exists contact_id text references clients(client_id);
 
 create table if not exists payments (
-  id           uuid    primary key default gen_random_uuid(),
-  client_id    text    references clients(client_id) on delete cascade,
+  id           uuid primary key default gen_random_uuid(),
+  client_id    text references clients(client_id) on delete cascade,
   amount       numeric not null check (amount>0),
-  payment_date date    not null default current_date,
-  method       text, note text,
-  recorded_by  uuid    references profiles(id),
-  created_at   timestamptz default now()
+  payment_date date not null default current_date,
+  method text, note text,
+  recorded_by uuid references profiles(id),
+  created_at timestamptz default now()
 );
 alter table payments enable row level security;
 drop policy if exists "payments_select" on payments;
 create policy "payments_select" on payments for select
-  using (is_admin() or exists(
-    select 1 from clients c where c.client_id=payments.client_id and c.assigned_to=auth.uid()));
+  using (is_admin() or exists(select 1 from clients c where c.client_id=payments.client_id and c.assigned_to=auth.uid()));
 drop policy if exists "payments_insert" on payments;
 create policy "payments_insert" on payments for insert
-  with check (is_admin() or exists(
-    select 1 from clients c where c.client_id=payments.client_id and c.assigned_to=auth.uid()));
+  with check (is_admin() or exists(select 1 from clients c where c.client_id=payments.client_id and c.assigned_to=auth.uid()));
 drop policy if exists "payments_update" on payments;
-create policy "payments_update" on payments for update
-  using (is_admin() or recorded_by=auth.uid());
+create policy "payments_update" on payments for update using (is_admin() or recorded_by=auth.uid());
 drop policy if exists "payments_delete" on payments;
-create policy "payments_delete" on payments for delete
-  using (is_admin() or recorded_by=auth.uid());
+create policy "payments_delete" on payments for delete using (is_admin() or recorded_by=auth.uid());
 
 create table if not exists planner_notes (
   id uuid primary key default gen_random_uuid(),
@@ -104,11 +102,11 @@ drop policy if exists "onedrive_tokens_all" on onedrive_tokens;
 create policy "onedrive_tokens_all" on onedrive_tokens for all
   using (user_id=auth.uid()) with check (user_id=auth.uid());
 
--- ── v3.3 ─────────────────────────────────────────────────────────────────
+-- v3.3
 create table if not exists message_reads (
   message_id uuid references messages(id) on delete cascade,
-  user_id    uuid references profiles(id) on delete cascade,
-  read_at    timestamptz default now(),
+  user_id uuid references profiles(id) on delete cascade,
+  read_at timestamptz default now(),
   primary key (message_id, user_id)
 );
 alter table message_reads enable row level security;
@@ -119,7 +117,6 @@ create policy "mreads_insert" on message_reads for insert with check (user_id=au
 drop policy if exists "mreads_delete" on message_reads;
 create policy "mreads_delete" on message_reads for delete using (user_id=auth.uid());
 
--- note_shares BEFORE notes (breaks circular RLS dependency)
 create table if not exists note_shares (
   id uuid primary key default gen_random_uuid(),
   note_id uuid,
@@ -199,27 +196,20 @@ create policy "actlog_select" on activity_log for select
 drop policy if exists "actlog_insert" on activity_log;
 create policy "actlog_insert" on activity_log for insert with check (is_approved());
 
-alter table messages add column if not exists note_id uuid
-  references notes(id) on delete set null;
+alter table messages add column if not exists note_id uuid references notes(id) on delete set null;
 
--- Storage bucket
-insert into storage.buckets (id,name,public)
-  values ('lexdesk-files','lexdesk-files',false)
-  on conflict (id) do nothing;
+insert into storage.buckets (id,name,public) values ('lexdesk-files','lexdesk-files',false) on conflict (id) do nothing;
 drop policy if exists "storage_select" on storage.objects;
-create policy "storage_select" on storage.objects for select
-  using (bucket_id='lexdesk-files' and auth.role()='authenticated');
+create policy "storage_select" on storage.objects for select using (bucket_id='lexdesk-files' and auth.role()='authenticated');
 drop policy if exists "storage_insert" on storage.objects;
-create policy "storage_insert" on storage.objects for insert
-  with check (bucket_id='lexdesk-files' and auth.role()='authenticated');
+create policy "storage_insert" on storage.objects for insert with check (bucket_id='lexdesk-files' and auth.role()='authenticated');
 drop policy if exists "storage_delete" on storage.objects;
-create policy "storage_delete" on storage.objects for delete
-  using (bucket_id='lexdesk-files' and auth.role()='authenticated');
+create policy "storage_delete" on storage.objects for delete using (bucket_id='lexdesk-files' and auth.role()='authenticated');
 
--- ── v3.4 ─────────────────────────────────────────────────────────────────
+-- v3.4
 alter table profiles add column if not exists dob date;
 
--- ── v3.5 ─────────────────────────────────────────────────────────────────
+-- v3.5
 create table if not exists portal_tokens (
   id uuid primary key default gen_random_uuid(),
   client_id text references clients(client_id) on delete cascade,
@@ -235,8 +225,7 @@ create policy "portal_tokens_select" on portal_tokens for select using (true);
 drop policy if exists "portal_tokens_insert" on portal_tokens;
 create policy "portal_tokens_insert" on portal_tokens for insert with check (is_approved());
 drop policy if exists "portal_tokens_delete" on portal_tokens;
-create policy "portal_tokens_delete" on portal_tokens for delete
-  using (is_admin() or created_by=auth.uid());
+create policy "portal_tokens_delete" on portal_tokens for delete using (is_admin() or created_by=auth.uid());
 
 create table if not exists invoice_settings (
   id uuid primary key default gen_random_uuid(),
@@ -262,8 +251,7 @@ create table if not exists deadline_rules (
   category_id text references categories(id) on delete set null,
   rule_name text not null, statute text, trigger_field text,
   offset_days int not null default 30,
-  offset_direction text not null default 'after'
-    check (offset_direction in ('after','before')),
+  offset_direction text not null default 'after' check (offset_direction in ('after','before')),
   description text, is_active boolean default true,
   created_by uuid references profiles(id),
   created_at timestamptz default now(), updated_at timestamptz default now()
@@ -278,46 +266,44 @@ create policy "drules_update" on deadline_rules for update using (is_admin());
 drop policy if exists "drules_delete" on deadline_rules;
 create policy "drules_delete" on deadline_rules for delete using (is_admin());
 
-insert into deadline_rules
-  (rule_name,statute,category_id,trigger_field,offset_days,offset_direction,description)
-values
-  ('Written Statement (Civil)','CPC Order VIII Rule 1','general','created_at',30,'after','Defendant must file written statement within 30 days of service of summons'),
-  ('Written Statement (Extended)','CPC Order VIII Rule 1 proviso','general','created_at',90,'after','Court may extend up to 90 days from date of service'),
-  ('First Appeal','CPC Section 96 r/w Order XLI','general','nextHearing',90,'after','90 days from date of decree for first appeal to High Court'),
-  ('Second Appeal','CPC Section 100','general','nextHearing',90,'after','90 days from date of decree of first appellate court'),
-  ('Revision Petition (CPC)','CPC Section 115','general','nextHearing',90,'after','90 days from date of order for civil revision'),
-  ('Bail Application Hearing','CrPC Section 437','general','created_at',1,'after','Bail application should be heard within 24 hours of arrest/remand'),
-  ('Charge Sheet Filing','CrPC Section 167(2)','general','created_at',60,'after','Police must file charge sheet within 60 days for offences punishable < 10 years'),
-  ('Charge Sheet (Serious)','CrPC Section 167(2) proviso','general','created_at',90,'after','Police must file charge sheet within 90 days for death/life/>=10 years'),
-  ('Criminal Appeal (Sessions)','CrPC Section 374','general','nextHearing',90,'after','90 days from date of conviction for appeal to High Court'),
-  ('Limitation — Contract','Limitation Act Article 55','general','created_at',1095,'after','3 years from date of breach for suit on contract'),
-  ('Limitation — Tort','Limitation Act Article 72-74','general','created_at',1095,'after','3 years from date when cause of action arose'),
-  ('Limitation — Recovery of Land','Limitation Act Article 65','general','created_at',4380,'after','12 years for suit for recovery of immovable property'),
-  ('CERT-In Incident Reporting','IT Act Section 70B','cyber','incidentDate',6,'after','6 hours from detection of cybersecurity incident — report to CERT-In'),
-  ('CERT-In Root Cause Report','CERT-In Directions 2022','cyber','incidentDate',30,'after','30 days from incident for detailed root cause analysis report'),
-  ('PDPB Data Breach Notification','DPDP Act Section 8','cyber','incidentDate',72,'after','72 hours from discovery of personal data breach'),
-  ('RBI Cyber Fraud Reporting','RBI Circular on Cyber Security','cyber','incidentDate',1,'after','2-6 hours from detection of cyber fraud — report to RBI'),
-  ('Rent Agreement Renewal Notice','Transfer of Property Act','rental','agreementExpiry',30,'before','Give 30 days notice before lease expiry for renewal or vacation'),
-  ('Eviction Notice Period','Transfer of Property Act Section 106','rental','agreementExpiry',15,'before','15 days notice for month-to-month tenancy')
+insert into deadline_rules (rule_name,statute,category_id,trigger_field,offset_days,offset_direction,description) values
+  ('Written Statement','CPC Order VIII Rule 1','general','created_at',30,'after','File written statement within 30 days of service'),
+  ('Written Statement (Extended)','CPC Order VIII Rule 1 proviso','general','created_at',90,'after','Court may extend to 90 days'),
+  ('First Appeal','CPC Section 96','general','nextHearing',90,'after','90 days from decree for first appeal'),
+  ('Second Appeal','CPC Section 100','general','nextHearing',90,'after','90 days from first appellate decree'),
+  ('Revision Petition','CPC Section 115','general','nextHearing',90,'after','90 days from order for civil revision'),
+  ('Bail Application','CrPC Section 437','general','created_at',1,'after','Bail should be heard within 24 hours'),
+  ('Charge Sheet','CrPC Section 167(2)','general','created_at',60,'after','Police must file charge sheet within 60 days'),
+  ('Charge Sheet (Serious)','CrPC Section 167(2) proviso','general','created_at',90,'after','90 days for death/life sentence offences'),
+  ('Criminal Appeal','CrPC Section 374','general','nextHearing',90,'after','90 days from conviction for appeal'),
+  ('Limitation Contract','Limitation Act Article 55','general','created_at',1095,'after','3 years from breach of contract'),
+  ('Limitation Tort','Limitation Act Article 72','general','created_at',1095,'after','3 years from cause of action in tort'),
+  ('Limitation Land','Limitation Act Article 65','general','created_at',4380,'after','12 years for recovery of land'),
+  ('CERT-In Incident','IT Act Section 70B','cyber','incidentDate',6,'after','6 hours from detection to report to CERT-In'),
+  ('CERT-In Root Cause','CERT-In Directions 2022','cyber','incidentDate',30,'after','30 days for root cause analysis'),
+  ('DPDP Data Breach','DPDP Act Section 8','cyber','incidentDate',72,'after','72 hours from discovery of personal data breach'),
+  ('RBI Cyber Fraud','RBI Circular','cyber','incidentDate',1,'after','2-6 hours from cyber fraud detection'),
+  ('Rent Renewal Notice','Transfer of Property Act','rental','agreementExpiry',30,'before','30 days notice before lease expiry'),
+  ('Eviction Notice','TPA Section 106','rental','agreementExpiry',15,'before','15 days notice for month-to-month tenancy')
 on conflict do nothing;
 
 insert into invoice_settings (firm_name,invoice_prefix)
-  select 'Law Firm','INV'
-  where not exists (select 1 from invoice_settings);
+  select 'Law Firm','INV' where not exists (select 1 from invoice_settings);
 
--- ── v3.6 ─────────────────────────────────────────────────────────────────
-alter table profiles add column if not exists is_founder      boolean default false;
-alter table profiles add column if not exists custom_role_id  uuid;
-alter table profiles add column if not exists archived        boolean default false;
+-- v3.6
+alter table profiles add column if not exists is_founder boolean default false;
+alter table profiles add column if not exists custom_role_id uuid;
+alter table profiles add column if not exists archived boolean default false;
 alter table profiles add column if not exists chatbot_enabled boolean default true;
+alter table profiles add column if not exists theme text default 'dark' check (theme in ('dark','light'));
 
 update profiles set is_founder=true
   where id=(select id from profiles where role='admin' order by created_at limit 1)
-    and is_founder is not true;
+  and is_founder is not true;
 
 create table if not exists custom_roles (
-  id         uuid primary key default gen_random_uuid(),
-  name       text not null unique,
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
   permissions jsonb not null default '{}',
   sort_order int default 99,
   created_by uuid references profiles(id),
@@ -325,13 +311,11 @@ create table if not exists custom_roles (
   updated_at timestamptz default now()
 );
 alter table custom_roles enable row level security;
--- Add updated_at if missing (for installs that ran an older version of this migration)
 alter table custom_roles add column if not exists updated_at timestamptz default now();
 drop policy if exists "croles_select" on custom_roles;
 create policy "croles_select" on custom_roles for select using (is_approved());
 drop policy if exists "croles_write" on custom_roles;
-create policy "croles_write" on custom_roles for all
-  using (is_admin()) with check (is_admin());
+create policy "croles_write" on custom_roles for all using (is_admin()) with check (is_admin());
 
 do $$ begin
   if not exists (
@@ -344,11 +328,21 @@ do $$ begin
 end $$;
 
 insert into custom_roles (name,permissions,sort_order) values
-  ('Senior Advocate',  '{"can_view_all_clients":true,"can_add_clients":true,"can_delete_clients":true,"can_assign_tasks":true,"can_create_tasks":true,"can_view_finances":true,"can_manage_users":true,"can_view_documents":true,"can_export":true}',   1),
-  ('Junior Advocate',  '{"can_view_all_clients":false,"can_add_clients":true,"can_delete_clients":false,"can_assign_tasks":true,"can_create_tasks":true,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":true}',  2),
-  ('Senior Assistant', '{"can_view_all_clients":false,"can_add_clients":true,"can_delete_clients":false,"can_assign_tasks":false,"can_create_tasks":false,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":false}', 3),
-  ('Junior Assistant', '{"can_view_all_clients":false,"can_add_clients":false,"can_delete_clients":false,"can_assign_tasks":false,"can_create_tasks":false,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":false}', 4)
+  ('Senior Advocate','{"can_view_all_clients":true,"can_add_clients":true,"can_delete_clients":true,"can_assign_tasks":true,"can_create_tasks":true,"can_view_finances":true,"can_manage_users":true,"can_view_documents":true,"can_export":true}',1),
+  ('Junior Advocate','{"can_view_all_clients":false,"can_add_clients":true,"can_delete_clients":false,"can_assign_tasks":true,"can_create_tasks":true,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":true}',2),
+  ('Senior Assistant','{"can_view_all_clients":false,"can_add_clients":true,"can_delete_clients":false,"can_assign_tasks":false,"can_create_tasks":false,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":false}',3),
+  ('Junior Assistant','{"can_view_all_clients":false,"can_add_clients":false,"can_delete_clients":false,"can_assign_tasks":false,"can_create_tasks":false,"can_view_finances":false,"can_manage_users":false,"can_view_documents":true,"can_export":false}',4)
 on conflict (name) do nothing;
+
+-- Group chat: create group_members FIRST (deferred FK), then chat_groups
+create table if not exists group_members (
+  group_id  uuid,
+  user_id   uuid references profiles(id) on delete cascade,
+  is_admin  boolean default false,
+  joined_at timestamptz default now(),
+  primary key (group_id, user_id)
+);
+alter table group_members enable row level security;
 
 create table if not exists chat_groups (
   id uuid primary key default gen_random_uuid(),
@@ -357,74 +351,76 @@ create table if not exists chat_groups (
   created_at timestamptz default now()
 );
 alter table chat_groups enable row level security;
--- Security definer functions to break group RLS circular dependencies
-create or replace function user_in_group(p_group_id uuid, p_user_id uuid)
-returns boolean language sql security definer stable as $$
-  select exists(select 1 from group_members where group_id=p_group_id and user_id=p_user_id);
-$$;
 
-create or replace function user_is_group_admin(p_group_id uuid, p_user_id uuid)
-returns boolean language sql security definer stable as $$
-  select exists(select 1 from group_members where group_id=p_group_id and user_id=p_user_id and is_admin=true);
-$$;
+do $$ begin
+  if not exists (
+    select 1 from information_schema.table_constraints
+    where constraint_name='group_members_group_id_fkey'
+  ) then
+    alter table group_members add constraint group_members_group_id_fkey
+      foreign key (group_id) references chat_groups(id) on delete cascade;
+  end if;
+end $$;
 
 drop policy if exists "cgroups_select" on chat_groups;
 create policy "cgroups_select" on chat_groups for select
   using (user_in_group(id, auth.uid()));
+
 drop policy if exists "cgroups_insert" on chat_groups;
-create policy "cgroups_insert" on chat_groups for insert with check (is_approved());
+create policy "cgroups_insert" on chat_groups for insert
+  with check (auth.uid() is not null);
+
 drop policy if exists "cgroups_update" on chat_groups;
 create policy "cgroups_update" on chat_groups for update
   using (user_is_group_admin(id, auth.uid()));
 
-create table if not exists group_members (
-  group_id uuid references chat_groups(id) on delete cascade,
-  user_id  uuid references profiles(id)   on delete cascade,
-  is_admin boolean default false,
-  joined_at timestamptz default now(),
-  primary key (group_id, user_id)
-);
-alter table group_members enable row level security;
--- gmembers_select: only check own row OR use the security definer fn to avoid recursion
+drop policy if exists "cgroups_delete" on chat_groups;
+create policy "cgroups_delete" on chat_groups for delete
+  using (created_by=auth.uid() or is_admin());
+
 drop policy if exists "gmembers_select" on group_members;
 create policy "gmembers_select" on group_members for select
   using (user_id=auth.uid() or user_in_group(group_id, auth.uid()));
+
 drop policy if exists "gmembers_insert" on group_members;
-create policy "gmembers_insert" on group_members for insert with check (is_approved());
+create policy "gmembers_insert" on group_members for insert
+  with check (auth.uid() is not null);
+
 drop policy if exists "gmembers_delete" on group_members;
 create policy "gmembers_delete" on group_members for delete
-  using (user_id=auth.uid() or user_is_group_admin(group_id, auth.uid()));
-drop policy if exists "gmembers_update" on group_members;
-create policy "gmembers_update" on group_members for update using (is_admin());
+  using (user_id=auth.uid() or user_is_group_admin(group_id, auth.uid()) or is_admin());
 
-alter table messages add column if not exists group_id uuid
-  references chat_groups(id) on delete cascade;
+drop policy if exists "gmembers_update" on group_members;
+create policy "gmembers_update" on group_members for update
+  using (user_is_group_admin(group_id, auth.uid()) or is_admin());
+
+alter table messages add column if not exists group_id uuid references chat_groups(id) on delete cascade;
 
 drop policy if exists "messages_select" on messages;
 create policy "messages_select" on messages for select
   using (
-    sender_id=auth.uid() or recipient_id=auth.uid() or recipient_id is null or
-    (group_id is not null and exists(
-      select 1 from group_members gm where gm.group_id=messages.group_id and gm.user_id=auth.uid()))
+    sender_id=auth.uid() or
+    recipient_id=auth.uid() or
+    recipient_id is null or
+    (group_id is not null and user_in_group(group_id, auth.uid()))
   );
 
 drop policy if exists "messages_insert" on messages;
 create policy "messages_insert" on messages for insert
-  with check (is_approved() and (
-    group_id is null or
-    exists(select 1 from group_members gm
-      where gm.group_id=messages.group_id and gm.user_id=auth.uid())
-  ));
+  with check (
+    auth.uid() is not null and (
+      group_id is null or user_in_group(group_id, auth.uid())
+    )
+  );
 
--- ── SANITY CHECKS ─────────────────────────────────────────────────────────
+-- Sanity check
 select table_name from information_schema.tables
 where table_schema='public'
   and table_name in (
-    'profiles','categories','form_schemas','clients','documents',
-    'templates','tasks','task_comments','messages','signup_codes',
-    'payments','planner_notes','onedrive_tokens','message_reads',
-    'notes','note_shares','note_history','activity_log',
-    'portal_tokens','invoice_settings','deadline_rules',
+    'profiles','categories','form_schemas','clients','documents','templates',
+    'tasks','task_comments','messages','signup_codes','payments','planner_notes',
+    'onedrive_tokens','message_reads','notes','note_shares','note_history',
+    'activity_log','portal_tokens','invoice_settings','deadline_rules',
     'custom_roles','chat_groups','group_members'
   )
 order by table_name;
@@ -433,18 +429,16 @@ select conname from pg_constraint where conname='tasks_status_check';
 
 select column_name from information_schema.columns
 where table_name='profiles'
-  and column_name in ('dob','is_founder','custom_role_id','archived','chatbot_enabled')
+  and column_name in ('dob','is_founder','custom_role_id','archived','chatbot_enabled','theme')
 order by column_name;
 
 select routine_name from information_schema.routines
 where routine_schema='public'
   and routine_name in (
-    'is_admin','is_approved',
-    'user_has_note_share','user_has_note_editor_share','user_owns_note',
-    'user_in_group','user_is_group_admin'
+    'is_admin','is_approved','user_has_note_share','user_has_note_editor_share',
+    'user_owns_note','user_in_group','user_is_group_admin'
   )
 order by routine_name;
 
--- ── Per-user theme preference ──
-alter table profiles add column if not exists theme text default 'dark'
-  check (theme in ('dark','light'));
+-- ── Per-user theme config (jsonb: mode, accent, background, contrast) ──
+alter table profiles add column if not exists theme_config jsonb default '{"mode":"dark","accent":"gold","background":"midnight","contrast":"standard"}'::jsonb;

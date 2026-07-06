@@ -36,6 +36,9 @@
   /* Glass formula — dark */
   --g-tint:    rgba(255,255,255,0.08);
   --g-tint-hi: rgba(255,255,255,0.13);
+  --glass:    rgba(255,255,255,0.08);
+  --glass-hi: rgba(255,255,255,0.14);
+  --glass-border: rgba(255,255,255,0.12);
   --g-rim:     rgba(255,255,255,0.28);   /* top specular */
   --g-rim-dim: rgba(255,255,255,0.10);   /* side/bottom */
   --g-blur:    blur(40px) saturate(200%);
@@ -104,28 +107,71 @@ html, body {
   background: #06091A;   /* deep midnight — orbs paint on top */
 }
 
-/* Fixed orb layer — sits behind everything */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  /* Three large soft orbs in complementary hues */
-  background:
-    radial-gradient(ellipse 70% 60% at 20% 20%,  #1B4FD8 0%, transparent 60%),
-    radial-gradient(ellipse 55% 50% at 85% 75%,  #0F766E 0%, transparent 55%),
-    radial-gradient(ellipse 50% 45% at 75%  5%,  #92400E 0%, transparent 50%),
-    radial-gradient(ellipse 65% 55% at 10% 85%,  #1E3A5F 0%, transparent 55%),
-    #06091A;
-  animation: orb-drift 20s ease-in-out infinite alternate;
+/* ─────────────────────────────────────────────────────────────────
+   ORB BACKGROUND — vivid colour layer the glass blurs over
+   Each orb is a separate absolutely-positioned div so they can
+   animate independently via CSS transforms.
+   ───────────────────────────────────────────────────────────────── */
+/* Orb layer wrapper */
+.lexdesk-orbs {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; overflow: hidden;
+  background: #06091A;
 }
-
-@keyframes orb-drift {
-  0%   { background-position: 0% 0%, 100% 100%, 90% 0%, 5% 95% ; }
-  100% { background-position: 5% 8%, 92%  88%, 85% 8%, 12% 88%; }
+/* Individual orbs */
+.lexdesk-orbs span {
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); opacity: 0.75;
 }
+.lexdesk-orbs span:nth-child(1){
+  width:70vw; height:70vw; top:-20%; left:-15%;
+  background: #1e3a6e;
+  animation: orb1 18s ease-in-out infinite alternate;
+}
+.lexdesk-orbs span:nth-child(2){
+  width:60vw; height:60vw; bottom:-15%; right:-10%;
+  background: #0e6655;
+  animation: orb2 22s ease-in-out infinite alternate;
+}
+.lexdesk-orbs span:nth-child(3){
+  width:45vw; height:45vw; top:5%; right:5%;
+  background: #7a3a0a;
+  animation: orb3 16s ease-in-out infinite alternate;
+}
+.lexdesk-orbs span:nth-child(4){
+  width:40vw; height:40vw; bottom:20%; left:15%;
+  background: #142850;
+  animation: orb1 24s ease-in-out infinite alternate-reverse;
+}
+@keyframes orb1 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(8vw,6vh) scale(1.1)} }
+@keyframes orb2 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(-7vw,-5vh) scale(1.08)} }
+@keyframes orb3 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(-5vw,7vh) scale(0.95)} }
 
-#app { display:flex; min-height:100vh; }
+/* Everything else sits on top of the orbs */
+#sidebar, #main, .modal-backdrop, #chatbot-btn, #chatbot-panel,
+#portal-screen, #portal-view, #login-screen, #setup-screen,
+#pending-screen { position: relative; z-index: 1; }
+#sidebar { z-index: 100; }
+#topbar  { z-index: 50; }
+.modal-backdrop { z-index: 1000; }
+#chatbot-panel  { z-index: 8889; }
+#chatbot-btn    { z-index: 8888; }
+#sidebar-overlay { z-index: 90; }
+#sidebar-toggle  { z-index: 200; }
+
+/* Remove old body::before since we're using .lexdesk-orbs divs */
+body::before { display: none; }
+
+/* Light mode orbs */
+html[data-theme="light"] .lexdesk-orbs { background: #F0F4FF; }
+html[data-theme="light"] .lexdesk-orbs span { opacity: 0.60; filter: blur(70px); }
+html[data-theme="light"] .lexdesk-orbs span:nth-child(1) { background: #60A5FA; }
+html[data-theme="light"] .lexdesk-orbs span:nth-child(2) { background: #34D399; }
+html[data-theme="light"] .lexdesk-orbs span:nth-child(3) { background: #FCD34D; }
+html[data-theme="light"] .lexdesk-orbs span:nth-child(4) { background: #F87171; }
+
+#app { display:flex; min-height:100vh; position:relative; z-index:1; }
+
 
 /* ─────────────────────────────────────────────────────────────────
    GLASS MIXIN  (applied via the .glass class or individual elements)
@@ -270,6 +316,9 @@ body::before {
 html[data-theme="light"] {
   --g-tint:    rgba(255,255,255,0.52);
   --g-tint-hi: rgba(255,255,255,0.68);
+  --glass:    rgba(255,255,255,0.52);
+  --glass-hi: rgba(255,255,255,0.68);
+  --glass-border: rgba(0,0,0,0.09);
   --g-rim:     rgba(255,255,255,0.90);
   --g-rim-dim: rgba(0,0,0,0.09);
   --g-blur:    blur(40px) saturate(200%);
@@ -306,20 +355,7 @@ html[data-theme="light"] {
   --glass-border-strong:rgba(0,0,0,0.14);
 }
 
-/* Light orb background — soft pastels */
-html[data-theme="light"] body {
-  background: #F0F4FF;
-  color: var(--text-primary);
-}
-html[data-theme="light"] body::before {
-  background:
-    radial-gradient(ellipse 70% 60% at 15% 15%, rgba(96,165,250,.55)  0%, transparent 60%),
-    radial-gradient(ellipse 55% 50% at 88% 80%, rgba(52,211,153,.45)  0%, transparent 55%),
-    radial-gradient(ellipse 50% 45% at 80%  5%, rgba(251,191,36,.40)  0%, transparent 50%),
-    radial-gradient(ellipse 60% 55% at  5% 85%, rgba(248,113,113,.30) 0%, transparent 55%),
-    #F0F4FF;
-  animation: orb-drift 20s ease-in-out infinite alternate;
-}
+html[data-theme="light"] body { color: var(--text-primary); }
 
 /* Light sidebar */
 html[data-theme="light"] #sidebar {
@@ -913,9 +949,23 @@ table.data-table{width:100%;border-collapse:collapse;font-size:13.5px}
   .cal-layout{grid-template-columns:1fr}
 }
 
+
+/* ── Chat search input — light mode ── */
+html[data-theme="light"] #chat-search-input{
+  background:rgba(0,0,0,.06)!important;
+  border-color:rgba(0,0,0,.12)!important;
+  color:var(--text-primary)!important;
+}
+html[data-theme="light"] #chat-search-input::placeholder{color:rgba(0,0,0,.32)!important;}
+
 </style>
 </head>
 <body>
+
+<!-- Liquid Glass animated orb background layer -->
+<div class="lexdesk-orbs" aria-hidden="true">
+  <span></span><span></span><span></span><span></span>
+</div>
 
 <!-- ══ SETUP (first admin) ══ -->
 <div id="setup-screen">
@@ -1310,6 +1360,20 @@ table.data-table{width:100%;border-collapse:collapse;font-size:13.5px}
       <div class="page-view" id="view-settings">
         <div class="settings-wrap">
 
+          <!-- ── APPEARANCE ── -->
+          <div class="settings-section">
+            <div class="settings-section-head"><i class="fas fa-palette"></i><span>Appearance & Theme</span></div>
+            <div class="settings-section-body" style="padding:20px;">
+              <p class="text-sm" style="color:var(--text-muted);margin-bottom:16px;">
+                Customise your Liquid Glass experience — mode, accent colour, background tint, and text contrast.
+                Your settings are saved to your profile and apply on every device.
+              </p>
+              <div id="theme-customiser">
+                <!-- Rendered by renderThemeCustomiser() in JS -->
+              </div>
+            </div>
+          </div>
+
           <div class="settings-section">
             <div class="settings-section-head"><i class="fas fa-user-circle"></i><span>Profile</span></div>
             <div class="settings-section-body">
@@ -1377,14 +1441,6 @@ table.data-table{width:100%;border-collapse:collapse;font-size:13.5px}
               <div class="settings-row">
                 <div class="settings-row-text"><div class="settings-row-label">Export to Excel</div><div class="settings-row-desc">Clients, Documents, Users & Tasks in one workbook</div></div>
                 <button class="btn btn-outline btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export</button>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-text"><div class="settings-row-label">Appearance</div><div class="settings-row-desc">Choose between Dark Glass (default) or Light Glass mode</div></div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <span style="font-size:12px;color:var(--text-muted);">☀ Light</span>
-                  <button class="toggle" id="theme-toggle" onclick="toggleTheme(this)" style="flex-shrink:0;"></button>
-                  <span style="font-size:12px;color:var(--text-muted);">🌑 Dark</span>
-                </div>
               </div>
               <div class="settings-row">
                 <div class="settings-row-text"><div class="settings-row-label">LexDesk Assistant (Chatbot)</div><div class="settings-row-desc">Floating help widget with preset Q&amp;A. Clears history every 2 days.</div></div>
@@ -2061,8 +2117,9 @@ async function afterAuth(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('pending-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  // Apply the user's saved theme preference
-  if(profile.theme) applyTheme(profile.theme);
+  // Apply the user's saved theme (profile takes precedence over localStorage)
+  if(typeof applyProfileTheme==='function') applyProfileTheme(profile);
+  else if(profile.theme) applyTheme(profile.theme);
   await initApp();
 }
 
@@ -2245,6 +2302,7 @@ function navigate(view){
   if(view==='finances') renderFinances();
   if(view==='formbuilder') renderFormBuilder();
   if(view==='tasks') renderTasks();
+  if(view==='settings') renderThemeCustomiser();
   if(view==='chat'){
     renderChatContacts();
     loadMessages().then(()=>{
@@ -3189,9 +3247,14 @@ let _chatTickTimer=null;
 // selectChatPeer() — defined in _js20_groups.html (group-aware version)
 
 async function loadMessages(){
+  // If a group is active, delegate to group message loader
+  if(S.activeGroupId){
+    if(typeof loadGroupMessages==='function') await loadGroupMessages(S.activeGroupId);
+    return;
+  }
   let query=sb.from('messages').select('*').order('created_at',{ascending:true}).limit(200);
   if(S.activeChatPeer===null){
-    query=query.is('recipient_id',null);
+    query=query.is('recipient_id',null).is('group_id',null);
   } else {
     query=query.or(`and(sender_id.eq.${S.user.id},recipient_id.eq.${S.activeChatPeer}),and(sender_id.eq.${S.activeChatPeer},recipient_id.eq.${S.user.id})`);
   }
@@ -3199,24 +3262,15 @@ async function loadMessages(){
   if(!error) S.messages=data||[];
   else console.error('loadMessages failed:',error);
 
-  // Load read receipts for messages I sent in this conversation,
-  // so we can show the eye icon when the other person has seen them.
+  // Load read receipts
   if(S.messages.length){
-    const myMsgIds=S.messages
-      .filter(m=>m.sender_id===S.user.id && !m.deleted)
-      .map(m=>m.id);
+    const myMsgIds=S.messages.filter(m=>m.sender_id===S.user.id&&!m.deleted).map(m=>m.id);
     if(myMsgIds.length){
       const {data:reads}=await sb.from('message_reads')
-        .select('message_id')
-        .in('message_id',myMsgIds)
-        .neq('user_id',S.user.id);   // read by someone else, not myself
+        .select('message_id').in('message_id',myMsgIds).neq('user_id',S.user.id);
       S.messageReadIds=new Set((reads||[]).map(r=>r.message_id));
-    } else {
-      S.messageReadIds=new Set();
-    }
-  } else {
-    S.messageReadIds=new Set();
-  }
+    } else { S.messageReadIds=new Set(); }
+  } else { S.messageReadIds=new Set(); }
 }
 function withinEditWindow(m){
   return (Date.now()-new Date(m.created_at).getTime())<MSG_EDIT_WINDOW_MS;
@@ -3878,6 +3932,8 @@ function loadSettingsUI(){
     const isEnabled = isChatbotEnabled();
     botToggle.classList.toggle('on', isEnabled);
   }
+  // Render theme customiser
+  if(typeof renderThemeCustomiser==='function') renderThemeCustomiser();
   const resetRow=document.getElementById('reset-row');
   if(resetRow) resetRow.style.display=isAdmin()?'flex':'none';
   const migRow=document.getElementById('migration-check-row');
@@ -6047,25 +6103,53 @@ async function loadChatGroups(){
 function renderChatContacts(){
   const cnt=document.getElementById('chat-contact-list');
   if(!cnt)return;
-  const others=S.users.filter(u=>u.id!==S.user?.id);
 
-  // Team Channel
+  const searchEl=document.getElementById('chat-search-input');
+  const searchQ=(searchEl?.value||'').toLowerCase().trim();
+
+  const others=S.users.filter(u=>{
+    if(u.id===S.user?.id)return false;
+    if(searchQ&&!u.full_name.toLowerCase().includes(searchQ))return false;
+    return true;
+  });
+  const filteredGroups=S.chatGroups.filter(g=>
+    !searchQ||g.name.toLowerCase().includes(searchQ)
+  );
+
   const bc=S.unreadCounts['broadcast']||0;
-  let html=`<div class="chat-contact${S.activeChatPeer===null&&!S.activeGroupId?' active':''}" onclick="selectChatPeer(null)">
-    <div class="avatar-sm av-navy" style="position:relative;">
-      <i class="fas fa-users"></i>
-      <span id="chat-badge-broadcast" class="chat-unread-badge" style="display:${bc?'inline-flex':'none'}">${bc||''}</span>
+  const showTeam=!searchQ||'team channel'.includes(searchQ);
+  let html='';
+
+  // Search bar
+  html+=`<div style="padding:10px 12px 6px;">
+    <div style="position:relative;">
+      <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);pointer-events:none;"></i>
+      <input type="text" id="chat-search-input" placeholder="Search conversations…"
+        value="${escHtml(searchQ)}"
+        oninput="renderChatContacts()"
+        style="width:100%;padding:7px 10px 7px 30px;border-radius:8px;font-size:12.5px;
+               background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+               color:var(--text-primary);outline:none;"/>
     </div>
-    <div class="chat-contact-name">Team Channel</div>
   </div>`;
 
-  // Groups
-  if(S.chatGroups.length){
-    html+=`<div style="padding:6px 14px 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.3);">Groups</div>`;
-    html+=S.chatGroups.map(g=>{
+  if(showTeam){
+    html+=`<div class="chat-contact${S.activeChatPeer===null&&!S.activeGroupId?' active':''}" onclick="selectChatPeer(null)">
+      <div class="avatar-sm av-navy" style="position:relative;">
+        <i class="fas fa-users"></i>
+        <span id="chat-badge-broadcast" class="chat-unread-badge" style="display:${bc?'inline-flex':'none'}">${bc||''}</span>
+      </div>
+      <div class="chat-contact-name">Team Channel</div>
+    </div>`;
+  }
+
+  if(filteredGroups.length){
+    html+=`<div class="chat-section-label">Groups</div>`;
+    html+=filteredGroups.map(g=>{
       const isActive=S.activeGroupId===g.id;
       const unread=S.unreadCounts[`group_${g.id}`]||0;
       const myRole=g.members.find(m=>m.user_id===S.user.id);
+      const isAdmin=myRole?.is_admin;
       return `<div class="chat-contact${isActive?' active':''}" onclick="selectChatGroup('${g.id}')">
         <div class="avatar-sm av-purple" style="position:relative;">
           <i class="fas fa-layer-group" style="font-size:11px;"></i>
@@ -6073,17 +6157,23 @@ function renderChatContacts(){
         </div>
         <div style="flex:1;min-width:0;">
           <div class="chat-contact-name">${escHtml(g.name)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.35);">${g.members.length} member${g.members.length!==1?'s':''}${myRole?.is_admin?' · Admin':''}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${g.members.length} member${g.members.length!==1?'s':''}${isAdmin?' · Admin':''}</div>
         </div>
-        ${myRole?.is_admin?`<i class="fas fa-cog" style="font-size:11px;color:rgba(255,255,255,.35);margin-right:4px;" onclick="event.stopPropagation();openGroupSettings('${g.id}')"></i>`:''}
+        ${isAdmin?`<button onclick="event.stopPropagation();openGroupSettings('${g.id}')"
+          style="background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;
+                 width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+                 cursor:pointer;flex-shrink:0;color:var(--text-secondary);font-size:12px;
+                 transition:all .15s;" title="Group settings">
+          <i class="fas fa-cog"></i></button>`:''}
       </div>`;
     }).join('');
   }
 
-  // Direct Messages
-  html+=`<div style="padding:6px 14px 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.3);">Direct Messages</div>`;
-  if(!others.length){
-    html+=`<div style="padding:14px;font-size:12px;color:var(--text-muted);">No other team members yet.</div>`;
+  if(others.length||!searchQ){
+    html+=`<div class="chat-section-label">Direct Messages</div>`;
+  }
+  if(!others.length&&!searchQ){
+    html+=`<div style="padding:10px 14px;font-size:12px;color:var(--text-muted);">No other team members yet.</div>`;
   }
   html+=others.map(u=>{
     const count=S.unreadCounts[u.id]||0;
@@ -6093,43 +6183,25 @@ function renderChatContacts(){
         ${initials(u.full_name)}
         <span id="chat-badge-${u.id}" class="chat-unread-badge" style="display:${count?'inline-flex':'none'}">${count||''}</span>
       </div>
-      <div class="chat-contact-name">${u.full_name}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="chat-contact-name">${escHtml(u.full_name)}</div>
+        <div style="font-size:10px;color:var(--text-muted);">${u.role==='admin'?'Admin':'Member'}</div>
+      </div>
     </div>`;
   }).join('');
 
-  // New Group button
-  html+=`<div style="padding:10px 14px;">
-    <button class="btn btn-outline btn-sm w-full" style="justify-content:center;color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.15);" onclick="openCreateGroupModal()">
-      <i class="fas fa-plus"></i> New Group
+  html+=`<div style="padding:8px 12px 12px;">
+    <button class="btn btn-outline btn-sm w-full" style="justify-content:center;font-size:12px;" onclick="openCreateGroupModal()">
+      <i class="fas fa-plus" style="margin-right:6px;"></i>New Group
     </button>
   </div>`;
 
   cnt.innerHTML=html;
+  if(searchQ){
+    const inp=cnt.querySelector('#chat-search-input');
+    if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+  }
 }
-
-// ── Select a group ────────────────────────────────────────────────────────
-async function selectChatGroup(groupId){
-  S.activeGroupId=groupId;
-  S.activeChatPeer=null;
-  S.editingMessageId=null;
-  resetChatSendButton();
-  document.getElementById('chat-text-input').value='';
-  renderChatContacts();
-  const g=S.chatGroups.find(x=>x.id===groupId);
-  document.getElementById('chat-header-title').textContent=g?escHtml(g.name):'Group';
-  await loadGroupMessages(groupId);
-  renderChatMessages();
-  markGroupRead(groupId);
-}
-
-async function loadGroupMessages(groupId){
-  const {data,error}=await sb.from('messages')
-    .select('*').eq('group_id',groupId)
-    .order('created_at',{ascending:true}).limit(200);
-  if(!error) S.messages=data||[];
-  S.messageReadIds=new Set(); // no read receipts for groups
-}
-
 function markGroupRead(groupId){
   const key=`group_${groupId}`;
   S.unreadCounts[key]=0;
@@ -6187,26 +6259,7 @@ window.sendChatMessage=async function(){
   renderChatMessages();
 };
 
-async function sendGroupMessage(){
-  const input=document.getElementById('chat-text-input');
-  const body=(input.value||'').trim();
-  if(!body&&!S.pendingChatFile)return;
-  const payload={sender_id:S.user.id,group_id:S.activeGroupId,body:body||null};
-  if(S.pendingChatFile){
-    const f=S.pendingChatFile;
-    const path=`chat/${Date.now()}_${f.name}`;
-    const {error:upErr}=await sb.storage.from('lexdesk-files').upload(path,f,{contentType:f.type});
-    if(upErr){showToast('Attachment upload failed: '+upErr.message,'error');return;}
-    payload.attachment_path=path;
-    payload.attachment_name=f.name;
-  }
-  const {error}=await sb.from('messages').insert(payload);
-  if(error){showToast('Send failed: '+error.message,'error');return;}
-  input.value='';
-  clearChatPendingFile();
-  await loadGroupMessages(S.activeGroupId);
-  renderChatMessages();
-}
+
 
 // ── Create group modal ────────────────────────────────────────────────────
 function openCreateGroupModal(){
@@ -6272,16 +6325,7 @@ function openGroupSettings(groupId){
   openModal('modal-group-settings');
 }
 
-async function saveGroupName(){
-  const name=(document.getElementById('gs-name').value||'').trim();
-  if(!name)return;
-  const {error}=await sb.from('chat_groups').update({name}).eq('id',S._managingGroupId);
-  if(error){showToast('Failed: '+error.message,'error');return;}
-  await loadChatGroups(); renderChatContacts();
-  const g=S.chatGroups.find(x=>x.id===S._managingGroupId);
-  if(g) document.getElementById('chat-header-title').textContent=g.name;
-  showToast('Group renamed.','success');
-}
+
 
 async function addGroupMember(){
   const uid=document.getElementById('gs-add-member').value;
@@ -6300,6 +6344,139 @@ async function removeGroupMember(groupId,userId){
   openGroupSettings(groupId);
   showToast('Member removed.','warning');
 }
+
+function selectChatGroup(groupId){
+  S.activeChatPeer   = null;
+  S.activeGroupId    = groupId;   // used by loadMessages() and fast poll
+  S.activeChatGroup  = groupId;   // legacy alias
+  S.editingMessageId = null;
+  resetChatSendButton();
+  document.getElementById('chat-text-input').value='';
+  renderChatContacts();
+  const grp=S.chatGroups.find(g=>g.id===groupId);
+  const headerEl=document.getElementById('chat-header-title');
+  if(headerEl) headerEl.textContent=grp?grp.name:'Group';
+  const manageBtn=document.getElementById('chat-manage-group-btn');
+  if(manageBtn) manageBtn.style.display='inline-flex';
+  loadGroupMessages(groupId).then(renderChatMessages);
+}
+
+async function loadGroupMessages(groupId){
+  const {data,error}=await sb.from('messages')
+    .select('*').eq('group_id',groupId)
+    .eq('deleted',false)
+    .order('created_at',{ascending:true}).limit(200);
+  if(!error) S.messages=data||[];
+  // Load read receipts for my sent messages
+  const myMsgIds=(S.messages||[]).filter(m=>m.sender_id===S.user.id).map(m=>m.id);
+  if(myMsgIds.length){
+    const {data:reads}=await sb.from('message_reads').select('message_id')
+      .in('message_id',myMsgIds).neq('user_id',S.user.id);
+    S.messageReadIds=new Set((reads||[]).map(r=>r.message_id));
+  } else { S.messageReadIds=new Set(); }
+}
+
+async function sendGroupMessage(){
+  const groupId=S.activeChatGroup;
+  if(!groupId) return;
+  const input=document.getElementById('chat-text-input');
+  const body=(input.value||'').trim();
+  if(!body&&!S.pendingChatFile) return;
+  const payload={sender_id:S.user.id,group_id:groupId,recipient_id:null,body:body||null};
+  if(S.pendingChatFile){
+    const f=S.pendingChatFile;
+    const path=`chat/${Date.now()}_${f.name}`;
+    const {error:upErr}=await sb.storage.from('lexdesk-files').upload(path,f,{contentType:f.type});
+    if(upErr){showToast('Upload failed: '+upErr.message,'error');return;}
+    payload.attachment_path=path; payload.attachment_name=f.name;
+  }
+  const {error}=await sb.from('messages').insert(payload);
+  if(error){showToast('Send failed: '+error.message,'error');return;}
+  input.value=''; clearChatPendingFile();
+  await loadGroupMessages(groupId); renderChatMessages();
+}
+
+// ── Group management modal ────────────────────────────────────────────────
+async function openManageGroupModal(){
+  const groupId=S.activeChatGroup;
+  if(!groupId) return;
+  const grp=S.chatGroups.find(g=>g.id===groupId);
+  if(!grp) return;
+  document.getElementById('manage-grp-name').value=grp.name;
+  const members=await loadGroupMembers(groupId);
+  const iAmAdmin=members.some(m=>m.user_id===S.user.id&&m.is_admin);
+  document.getElementById('manage-grp-admin-controls').style.display=iAmAdmin?'block':'none';
+
+  const list=document.getElementById('manage-grp-members');
+  list.innerHTML=members.map(m=>{
+    const u=m.profiles||S.users.find(x=>x.id===m.user_id);
+    const name=u?.full_name||m.user_id;
+    const isMe=m.user_id===S.user.id;
+    const isSeniorAdv=u?.role==='admin';
+    return `<div class="user-list-item" style="padding:8px 12px;">
+      <div class="avatar-sm ${m.is_admin?'av-purple':'av-blue'}">${initials(name)}</div>
+      <div class="user-list-item-info">
+        <div class="user-list-item-name">${escHtml(name)} ${m.is_admin?'<span class="badge badge-admin" style="font-size:10px;">Admin</span>':''}</div>
+      </div>
+      ${iAmAdmin&&!isMe&&!isSeniorAdv
+        ?`<button class="btn btn-danger btn-xs" onclick="removeFromGroup('${groupId}','${m.user_id}')">Remove</button>`:''}
+    </div>`;
+  }).join('');
+
+  // Populate add-member dropdown (users not already in group)
+  const memberIds=new Set(members.map(m=>m.user_id));
+  const addSel=document.getElementById('manage-grp-add-user');
+  const eligible=S.users.filter(u=>!memberIds.has(u.id));
+  addSel.innerHTML=eligible.length
+    ?eligible.map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('')
+    :'<option value="">All users already in group</option>';
+  addSel.disabled=!eligible.length;
+
+  openModal('modal-manage-group');
+}
+
+async function saveGroupName(){
+  const groupId=S.activeChatGroup;
+  const name=(document.getElementById('manage-grp-name')?.value||'').trim();
+  if(!name||!groupId) return;
+  const {error}=await sb.from('chat_groups').update({name}).eq('id',groupId);
+  if(error){showToast('Failed: '+error.message,'error');return;}
+  await loadChatGroups(); renderChatContacts();
+  document.getElementById('chat-header-title').textContent=name;
+  showToast('Group name updated.','success');
+}
+
+async function addToGroup(){
+  const groupId=S.activeChatGroup;
+  const uid=document.getElementById('manage-grp-add-user')?.value;
+  if(!groupId||!uid) return;
+  const {error}=await sb.from('chat_group_members').insert({group_id:groupId,user_id:uid,is_admin:false});
+  if(error){showToast('Failed: '+error.message,'error');return;}
+  await openManageGroupModal();
+  showToast('Member added.','success');
+}
+
+async function removeFromGroup(groupId,uid){
+  if(!confirm('Remove this member from the group?')) return;
+  await sb.from('chat_group_members').delete().eq('group_id',groupId).eq('user_id',uid);
+  await openManageGroupModal();
+  showToast('Member removed.','warning');
+}
+
+async function leaveGroup(){
+  const groupId=S.activeChatGroup;
+  if(!groupId||!confirm('Leave this group?')) return;
+  await sb.from('chat_group_members').delete().eq('group_id',groupId).eq('user_id',S.user.id);
+  S.activeChatGroup=null;
+  await loadChatGroups(); renderChatContacts();
+  closeModal('modal-manage-group');
+  // Switch to team channel
+  selectChatPeer(null);
+  showToast('You left the group.','warning');
+}
+
+// ── Build create group modal member list ─────────────────────────────────
+
 </script>
 <script>
 // ════════════════════════════════════════════
@@ -6378,32 +6555,6 @@ async function autoDeleteOldTasks(){
   if(data) S.tasks=data;
 }
 
-// ── Theme management (dark / light Liquid Glass) ──────────────────────────
-function getTheme(){ return localStorage.getItem('ld_theme')||'dark'; }
-
-function applyTheme(theme, saveToProfile=false){
-  document.documentElement.setAttribute('data-theme', theme==='light'?'light':'');
-  const toggle = document.getElementById('theme-toggle');
-  if(toggle) toggle.classList.toggle('on', theme!=='light');
-  localStorage.setItem('ld_theme', theme);
-  // Persist to user profile if logged in (fire-and-forget)
-  if(saveToProfile && S?.user?.id){
-    sb.from('profiles').update({theme}).eq('id', S.user.id);
-  }
-}
-
-function toggleTheme(btn){
-  const nowDark = !btn.classList.contains('on');
-  btn.classList.toggle('on', nowDark);
-  applyTheme(nowDark ? 'dark' : 'light', true);
-  showToast(nowDark ? '🌑 Dark mode' : '☀ Light mode', 'info');
-}
-
-function initTheme(){
-  // Use profile theme if available, else localStorage, else 'dark'
-  const theme = S?.profile?.theme || getTheme();
-  applyTheme(theme);
-}
 
 // ── Apply finances visibility (admin-only) ────────────────────────────────
 function applyFinancesVisibility(){
@@ -6428,32 +6579,6 @@ function toggleChatbotSetting(btn){
 // These are thin wrappers — the real logic is in _js20_groups.html.
 // The modal HTML calls createGroup() which is defined in _js20_groups.html.
 
-async function addToGroup(){
-  const sel=document.getElementById('manage-grp-add-user');
-  const uid=sel?.value;
-  if(!uid||!S._managingGroupId)return;
-  const {error}=await sb.from('group_members')
-    .insert({group_id:S._managingGroupId,user_id:uid,is_admin:false});
-  if(error){showToast('Failed: '+error.message,'error');return;}
-  await loadChatGroups();
-  renderChatContacts();
-  openGroupSettings(S._managingGroupId);
-  showToast('Member added.','success');
-}
-
-async function leaveGroup(){
-  if(!S._managingGroupId)return;
-  if(!confirm('Leave this group?'))return;
-  const {error}=await sb.from('group_members')
-    .delete().eq('group_id',S._managingGroupId).eq('user_id',S.user.id);
-  if(error){showToast('Failed: '+error.message,'error');return;}
-  closeModal('modal-group-settings');
-  S.activeGroupId=null; S.activeChatPeer=null;
-  await loadChatGroups();
-  renderChatContacts();
-  showToast('You left the group.','info');
-}
-
 async function deleteGroup(){
   const groupId=S._managingGroupId;
   if(!groupId){showToast('No group selected.','error');return;}
@@ -6472,234 +6597,294 @@ async function deleteGroup(){
 </script>
 <script>
 // ════════════════════════════════════════════
-//  LEXDESK ASSISTANT — conversational chat UI
-//  Preset Q&A knowledge base, feels like a real
-//  chat. Draggable. 2-day clear. Settings toggle.
+//  LEXDESK ASSISTANT — Deep Indian Law + System Help
+//  Conversational chat UI, no API key.
+//  2-day localStorage clear. Settings toggle.
 // ════════════════════════════════════════════
 const BOT_KEY  = 'ld_bot_msgs';
 const BOT_DATE = 'ld_bot_date';
 
-// ── Knowledge base ────────────────────────────────────────────────────────
-// Each entry: { keywords:[], q:'...', a:'...' }
-// keywords are used for fuzzy matching when user types freely
 const BOT_KB = [
-  // SYSTEM
-  { cat:'System', keywords:['add client','new client','create client','client form'],
-    q:'How do I add a new client?',
-    a:'Tap <strong>New Client</strong> in the top bar. At the top of the form, enter the opposite party name — the system instantly checks for conflicts. Fill in the case type, client details, fee, and save. The system auto-generates a unique Client ID.' },
-  { cat:'System', keywords:['record payment','add payment','payment','fees received','paid'],
-    q:'How do I record a payment?',
-    a:'Two ways: open the client detail → <strong>Payments</strong> tab → Record Payment. Or go to <strong>Finances</strong> in the sidebar, expand the client row, and click Record Payment directly from there.' },
-  { cat:'System', keywords:['task','assign task','new task','workflow','in review','kanban'],
-    q:'How does the task workflow work?',
-    a:'The Senior Advocate creates tasks and assigns them. The flow is <strong>Open → In Progress → In Review → Approved</strong>. Assistants start work and send for review when done. The Senior Advocate can Approve, Rework, or Cancel. Fields lock once a task moves past Open.' },
-  { cat:'System', keywords:['portal','client link','client portal','share case','client login'],
-    q:'How do I give a client access to their case?',
-    a:'Open the client detail modal → click <strong>Portal Link</strong> in the footer. You get a unique URL and a 4-digit PIN. Share the link by email and the PIN by SMS — never both together. The client enters the PIN to see their case status, payments, and documents. No account needed. Valid 90 days.' },
-  { cat:'System', keywords:['invoice','generate invoice','pdf','bill','receipt'],
-    q:'How do I generate an invoice?',
-    a:'Open a client detail → click <strong>Invoice</strong> in the footer. A print-ready invoice opens in a new tab — use Print → Save as PDF. First fill in your firm details in <strong>Settings → Invoice Settings</strong>.' },
-  { cat:'System', keywords:['group chat','group','create group','new group','team chat'],
-    q:'How do I create a group chat?',
-    a:'Go to <strong>Messages</strong> → click <strong>New Group</strong> at the bottom. Name it, pick members. The Senior Advocate is automatically a group admin. Admins can rename, add, or remove members using the ⚙ icon.' },
-  { cat:'System', keywords:['planner','calendar','daily planner','schedule','agenda'],
-    q:'How does the Daily Planner work?',
-    a:'The <strong>Daily Planner</strong> shows a full monthly calendar. Colored dots mark days with events — red for deadlines, purple for tasks due, blue for hearings, gold for personal notes. Click any day to open that day\'s agenda on the right side and add timed notes.' },
-  { cat:'System', keywords:['deadline','court deadline','filing deadline','statute','limitation'],
-    q:'How do court deadline rules work?',
-    a:'Go to <strong>Admin → Deadline Rules</strong>. Rules like "Written Statement due 30 days after case creation" are pre-seeded with 18 common Indian statutes. Open any client → <strong>Deadlines tab</strong> to see all computed deadlines. Red = overdue, orange = within 30 days.' },
-  { cat:'System', keywords:['role','permission','hierarchy','junior','advocate','assistant','custom role'],
-    q:'How do I set up team roles and permissions?',
-    a:'Go to <strong>Admin → Roles</strong>. Create roles like "Junior Advocate" or "Senior Assistant" with individual permission toggles (view clients, add clients, assign tasks, view finances, etc.). Assign roles from the <strong>Users</strong> page.' },
-  { cat:'System', keywords:['archive','remove user','delete user','leave','team member'],
-    q:'How do I archive or remove a team member?',
-    a:'Go to <strong>Users</strong>. Archive (📦) removes access but keeps data — they can be restored. Permanently Remove (🗑) deletes their profile forever. The Founder (first signup) is protected and cannot be removed.' },
-  { cat:'System', keywords:['password','forgot password','reset password','change password','login issue'],
-    q:'How do I reset or change my password?',
-    a:'On the login screen, click <strong>Forgot Password?</strong> — enter your email and you\'ll get a reset link. You can also change your password anytime from <strong>Settings → Change Password</strong>.' },
-  { cat:'System', keywords:['conflict','opposite party','conflict check','clash','same client'],
-    q:'How does the conflict of interest checker work?',
-    a:'When adding a new client, type the opposite party\'s name in the conflict checker field at the top of the form. It instantly scans all existing clients and opposite-party fields and shows a red warning if there\'s a match.' },
-  { cat:'System', keywords:['note','share note','private note','team note','document note'],
-    q:'How do I share a note with a team member?',
-    a:'Go to <strong>Notes</strong> → open your note → click <strong>Share</strong>. Set them as Viewer or Editor. You can change or revoke access at any time. Check "Send chat message" to notify them instantly.' },
-  { cat:'System', keywords:['chatbot','bot','assistant','disable bot','enable bot'],
-    q:'How do I turn the chatbot on or off?',
-    a:'Go to <strong>Settings</strong> → find the Chatbot toggle and switch it off. The floating button disappears. Turn it back on the same way. Chat history clears automatically every 2 days.' },
-  { cat:'System', keywords:['finances','firm finances','payment tracker','balance','outstanding'],
-    q:'How does the Finances page work?',
-    a:'Visible to the Senior Advocate only. It shows firm-wide fee tracking with 3 summary cards (Total Fees, Collected, Outstanding). Every client has a payment progress bar. Expand any row to see the full ledger and record new payments.' },
-  { cat:'System', keywords:['document','upload file','documents section','filter document'],
-    q:'How do I manage documents?',
-    a:'Go to <strong>Documents</strong> in the sidebar. Use the <strong>Client filter</strong> dropdown to show only documents for a specific client. Upload files from inside a client detail modal under the <strong>Documents tab</strong>.' },
-  { cat:'System', keywords:['template','document template','use template','variable','placeholder'],
-    q:'How do document templates work?',
-    a:'Go to <strong>Templates</strong> → New Template. Write your document with placeholders like <code>{{CLIENT_NAME}}</code> or <code>{{DATE}}</code>. You can add custom variables with labels. When clicking "Use Template", fill in those variables and the document generates with all values filled in.' },
-  { cat:'System', keywords:['activity','audit','log','changes','who changed','history'],
-    q:'Where can I see what changes were made?',
-    a:'Go to <strong>Admin → Activity Log</strong>. Every client created/updated (with exact field-by-field diffs), note created/shared, and permission change is recorded with who did it and when.' },
-  // CIVIL
-  { cat:'Civil Law', keywords:['limitation period','time limit','how long to file suit','when to file'],
-    q:'What are the limitation periods for civil suits?',
-    a:'Under the <strong>Limitation Act 1963</strong>: Contract breach — 3 years; Money recovery — 3 years; Immovable property recovery — 12 years; Mortgage redemption — 30 years; Tort/negligence — 3 years. Time runs from when the cause of action accrues. Section 5 allows condonation of delay for sufficient cause in most cases.' },
-  { cat:'Civil Law', keywords:['injunction','interim injunction','stay order','temporary injunction'],
-    q:'How do I get an interim injunction?',
-    a:'File an IA under <strong>Order XXXIX CPC</strong> with an affidavit proving three things: (1) <em>Prima facie case</em> — arguable merits; (2) <em>Balance of convenience</em> — your hardship > defendant\'s; (3) <em>Irreparable injury</em> — damages alone won\'t compensate. For ex-parte relief, show urgency. Breach of an injunction is contempt of court.' },
-  { cat:'Civil Law', keywords:['specific performance','contract enforcement','specific relief'],
-    q:'When can I enforce a contract specifically?',
-    a:'Under the <strong>Specific Relief Act 1963</strong> (amended 2018), specific performance of contracts is now <em>mandatory</em> in most cases — courts cannot refuse merely because damages are adequate. Exceptions: contracts requiring personal skill, those dependent on supervision over time, or where terms are too uncertain.' },
-  { cat:'Civil Law', keywords:['res judicata','same case twice','re-litigation','same issue'],
-    q:'What is res judicata?',
-    a:'<strong>Section 11 CPC</strong> bars re-litigation of issues finally decided between the same parties by a competent court. <strong>Constructive res judicata</strong> (Explanation IV) also bars issues that <em>ought to have been raised</em> but weren\'t in the former suit — prevents piecemeal litigation.' },
-  { cat:'Civil Law', keywords:['civil suit procedure','how to file suit','plaint','summons'],
-    q:'What is the procedure for filing a civil suit?',
-    a:'(1) Draft plaint (Order VII CPC) — parties, cause of action, relief, valuation; (2) File with court fees; (3) Court issues summons; (4) Defendant files Written Statement within 30 days (up to 90 days maximum); (5) Issues are framed; (6) Evidence — examination, cross-examination; (7) Arguments; (8) Judgment and decree.' },
-  // CRIMINAL
-  { cat:'Criminal Law', keywords:['bnss','bns','bsa','new criminal law','2024 law','bharatiya'],
-    q:'What changed with BNS, BNSS and BSA in 2024?',
-    a:'Three new codes replaced colonial laws from <strong>July 1, 2024</strong>: <strong>Bharatiya Nyaya Sanhita (BNS)</strong> replaces IPC; <strong>Bharatiya Nagarik Suraksha Sanhita (BNSS)</strong> replaces CrPC; <strong>Bharatiya Sakshya Adhiniyam (BSA)</strong> replaces the Evidence Act. Key changes: Zero FIR filing anywhere, 7-day police custody in tranches, mandatory video recording of searches, and trial in absentia.' },
-  { cat:'Criminal Law', keywords:['bail','non bailable','apply for bail','bail application'],
-    q:'How do I apply for bail in a non-bailable offence?',
-    a:'Under <strong>Section 480 BNSS</strong>: file application before the Magistrate, Sessions Court, or High Court with a supporting affidavit. The court considers gravity of offence, criminal history, flight risk, and tampering risk. <strong>Anticipatory bail (Section 482 BNSS)</strong> can be applied for before any arrest when you apprehend arrest.' },
-  { cat:'Criminal Law', keywords:['fir','first information report','register fir','police complaint'],
-    q:'When must an FIR be registered?',
-    a:'For <strong>cognizable offences</strong>, police <em>must</em> register an FIR — they cannot refuse (<em>Lalita Kumari v UP, 2013</em>). If refused: send written complaint to SP by speed post, or file a complaint directly before a Magistrate. BNSS also introduces <strong>Zero FIR</strong> — file at any station regardless of jurisdiction.' },
-  { cat:'Criminal Law', keywords:['rights arrested','arrested person rights','custody rights','police custody'],
-    q:'What are the rights of an arrested person?',
-    a:'Under Article 22 + BNSS: (1) Right to know grounds of arrest; (2) Right to consult a lawyer; (3) Right to be produced before Magistrate within 24 hours; (4) Right against self-incrimination (Article 20(3)); (5) Right to inform a friend/relative; (6) Right to medical examination; (7) D.K. Basu safeguards — no torture, arrest memo with witness signature.' },
-  { cat:'Criminal Law', keywords:['ndps','drug','narcotic','substance','possession'],
-    q:'What are the key provisions of the NDPS Act?',
-    a:'<strong>NDPS Act 1985</strong>: Bail is nearly impossible at commercial quantity level — Section 37 requires the court to be "satisfied" there are reasonable grounds the accused is not guilty. Small quantity: bail possible. Commercial quantity: 10-20 years + fine. Offences are cognizable, non-bailable. Section 35/54 creates a presumption — once possession is proved, accused must prove innocence.' },
-  // CYBER
-  { cat:'Cyber Law', keywords:['it act','cyber offence','hacking','computer crime'],
-    q:'What are the key offences under the IT Act 2000?',
-    a:'Section 43: Unauthorized access/damage — civil penalty up to ₹1 crore. Section 66: Hacking — 3 years + ₹5 lakh. Section 66C/D: Identity theft, cheating by personation — 3 years. Section 66E: Privacy violation (private images) — 3 years. Section 66F: Cyber terrorism — life imprisonment. Section 67A/B: Sexually explicit material, child abuse material — 5-7 years.' },
-  { cat:'Cyber Law', keywords:['cert-in','cert in','reporting incident','cybersecurity report','6 hours'],
-    q:'What are the CERT-In reporting obligations?',
-    a:'Under <strong>CERT-In Directions 2022</strong>: 20 categories of cybersecurity incidents must be reported within <strong>6 hours</strong> of detection — not 24 or 72 hours. Organizations must maintain ICT logs for 180 days within India. VPN/Cloud providers must keep subscriber records for 5 years. Non-compliance: prosecution under Section 70B(7) IT Act.' },
-  { cat:'Cyber Law', keywords:['dpdp','data protection','privacy law','personal data','data breach'],
-    q:'What is the DPDP Act 2023?',
-    a:'<strong>Digital Personal Data Protection Act 2023</strong> — India\'s first comprehensive privacy law. Key duties: lawful basis for processing, purpose limitation, security safeguards, breach notification to Data Protection Board. Significant Data Fiduciaries must appoint a DPO and conduct DPIAs. Penalties up to ₹250 crore per violation.' },
-  { cat:'Cyber Law', keywords:['ransomware','cyber attack','data breach response','hack response'],
-    q:'What are the legal steps after a ransomware attack?',
-    a:'(1) Report to <strong>CERT-In within 6 hours</strong> — mandatory; (2) Notify RBI within 2-6 hours if you\'re a financial institution; (3) Preserve logs and forensic evidence — do NOT pay ransom without legal advice; (4) File FIR under Section 66 IT Act + BNS extortion provisions; (5) Root cause analysis to CERT-In within 30 days; (6) Notify cyber insurer.' },
-  { cat:'Cyber Law', keywords:['cyber fraud','online fraud','financial fraud','upi fraud','1930'],
-    q:'What do I do after online financial fraud?',
-    a:'(1) Call <strong>1930</strong> (National Cybercrime Helpline) within minutes; (2) File at cybercrime.gov.in; (3) Inform your bank immediately to freeze the destination account; (4) File FIR at nearest Cyber Crime Cell. Quick reporting (within 30 minutes) significantly improves chances of fund recovery through the CFCFRS system.' },
-  // RENTAL
-  { cat:'Rental Law', keywords:['evict tenant','eviction','remove tenant','vacate','possession'],
-    q:'How do I evict a tenant legally?',
-    a:'(1) Issue <strong>legal notice</strong> — 15 days for month-to-month tenancy (Section 106 TPA); (2) If no vacation, file eviction suit before the Rent Control Court or Civil Court; (3) Grounds: non-payment, bonafide personal need, unauthorized subletting, misuse, expiry of term; (4) Court issues eviction decree and sends a Bailiff for possession. State laws vary — Karnataka, Maharashtra, Delhi each have specific Rent Acts.' },
-  { cat:'Rental Law', keywords:['rent agreement','rental agreement','lease','leave and licence','what to include'],
-    q:'What should a rent agreement include?',
-    a:'Essential clauses: parties and property details; monthly rent and due date; security deposit and return conditions; lock-in period; notice period for termination; permitted use; maintenance responsibilities; subletting prohibition; rent escalation (typically 5-10% annually). Agreements over 11 months must be registered. Most landlords keep it at 11 months to avoid registration and maintain clear eviction rights.' },
-  { cat:'Rental Law', keywords:['security deposit','deposit limit','deposit state','deposit rules'],
-    q:'What are the security deposit limits by state?',
-    a:'<strong>Karnataka</strong> — max 10 months rent. <strong>Tamil Nadu</strong> — max 5 months. <strong>AP/Telangana</strong> — max 2 months. <strong>Maharashtra/Delhi</strong> — no statutory cap, market practice is 1-3 months. Deposit must be refunded within the agreed period (typically 30-45 days after vacating) minus itemised deductions for damage beyond normal wear and tear.' },
-  // CORPORATE
-  { cat:'Corporate Law', keywords:['incorporate company','start company','pvt ltd','register company'],
-    q:'How do I incorporate a Private Limited Company?',
-    a:'(1) Get DSC for directors; (2) Apply for DIN; (3) Reserve name via RUN on MCA portal; (4) File <strong>SPICe+ (INC-32)</strong> with MOA, AOA; (5) Certificate of Incorporation issued with CIN, PAN, TAN; (6) Open bank account; (7) File INC-20A within 180 days. Timeline: 5-7 working days. Cost: ₹2,000-15,000 government fees + professional charges.' },
-  { cat:'Corporate Law', keywords:['ibc','insolvency','nclt','bankruptcy','resolution'],
-    q:'How does the IBC insolvency process work?',
-    a:'<strong>IBC 2016 CIRP</strong>: Application by financial creditor, operational creditor, or the company itself to NCLT (minimum default ₹1 crore). IRP appointed, moratorium declared. Committee of Creditors (CoC) formed. Resolution plan must be submitted and approved by <strong>66% of CoC votes</strong> within 180 days (extendable to 330). If no plan — liquidation. The CoC\'s commercial wisdom is paramount (<em>Essar Steel 2019</em>).' },
-  { cat:'Corporate Law', keywords:['shareholders agreement','sha','tag along','drag along','investor rights'],
-    q:'What are the key clauses in a Shareholders Agreement?',
-    a:'Key SHA clauses: <strong>Pre-emption rights</strong> (existing shareholders get first offer); <strong>Tag-along</strong> (minority joins majority\'s exit on same terms); <strong>Drag-along</strong> (majority can compel minority to sell); <strong>Anti-dilution</strong> (protects investor in down-rounds); <strong>Affirmative vote matters</strong> (decisions requiring investor consent); <strong>Liquidation preference</strong>.' },
-  // FAMILY
-  { cat:'Family Law', keywords:['divorce','grounds divorce','hindu marriage','petition divorce'],
-    q:'What are the grounds for divorce under the Hindu Marriage Act?',
-    a:'<strong>Section 13 HMA</strong> fault grounds: adultery, cruelty (physical or mental), desertion ≥2 years, conversion, unsoundness of mind ≥3 years, incurable leprosy, communicable venereal disease, renunciation, presumption of death (7 years). <strong>Section 13B mutual consent</strong>: file after 1 year of marriage, 6-month cooling period (waivable if marriage is irretrievably broken per <em>Amardeep Singh 2017</em>).' },
-  { cat:'Family Law', keywords:['maintenance','alimony','spouse support','section 125'],
-    q:'How is maintenance determined?',
-    a:'<strong>Section 144 BNSS</strong> (formerly 125 CrPC): Magistrate can award maintenance to wife, children, and parents — no cap, based on means and needs. <strong>Section 24 HMA</strong>: interim maintenance during proceedings. <strong>Section 25 HMA</strong>: permanent alimony. <em>Rajnesh v Neha (2020)</em>: SC mandated uniform disclosure of assets and a factor-based formula (income, standard of living, children, wife\'s earning capacity).' },
-  { cat:'Family Law', keywords:['custody','child custody','guardian','minor children'],
-    q:'How is child custody decided?',
-    a:'<strong>Paramount principle</strong>: best interests of the child. Below 5 years, mother is generally preferred. Courts weigh: child\'s wishes (if old enough), emotional bond with each parent, each parent\'s financial and emotional capacity, continuity of schooling. Courts increasingly grant <strong>joint physical custody</strong>. Habeas corpus before HC for immediate production of a wrongfully withheld child.' },
-  { cat:'Family Law', keywords:['domestic violence','dv act','protection order','pwdva'],
-    q:'What does the Domestic Violence Act protect?',
-    a:'<strong>PWDVA 2005</strong> protects women in domestic relationships from physical, sexual, verbal, emotional, and economic abuse. Available reliefs: Protection Order, Residence Order (right to stay in shared home), Monetary Relief, Custody Order, Compensation. Emergency relief is available within 24-48 hours. Violation of a Protection Order is a criminal offence.' },
-  // LABOUR
-  { cat:'Labour Law', keywords:['wrongful termination','illegal termination','fired illegally','retrenchment'],
-    q:'What constitutes wrongful termination?',
-    a:'Termination is wrongful if it violates: (1) <strong>Section 25F IDA</strong> — retrenchment in establishments ≥100 workers requires 1 month notice, 15 days\' compensation per year of service, government permission; (2) Standing Orders — prescribed misconduct procedure (show cause, inquiry, findings); (3) Natural justice — right to be heard; (4) Anti-discrimination laws. Remedies: reinstatement + full back wages from Labour Court.' },
-  { cat:'Labour Law', keywords:['posh','sexual harassment','workplace harassment','icc','complaint'],
-    q:'What are the POSH Act obligations?',
-    a:'<strong>POSH Act 2013</strong> applies to ALL establishments. Employers must: constitute an <strong>ICC</strong> (Internal Complaints Committee) with at least 4 members including an external member; display the policy; run awareness programmes. ICC inquiry must complete within <strong>90 days</strong>. Non-constitution of ICC: penalty ₹50,000, double for repeat + licence cancellation.' },
-  { cat:'Labour Law', keywords:['epf','esic','pf','provident fund','esi'],
-    q:'What are EPF and ESI compliance obligations?',
-    a:'<strong>EPF</strong> applies to establishments ≥20 employees. Employee contributes 12% of basic+DA; Employer contributes 12% (8.33% → Pension, 3.67% → EPF). <strong>ESI</strong> applies to ≥10 employees where wages ≤ ₹21,000/month. Employee pays 0.75%, Employer pays 3.25%. ESI covers medical, sickness, maternity, disablement, and death benefits. Non-compliance attracts damages, interest, and criminal prosecution.' },
-  // TAX
-  { cat:'Tax Law', keywords:['gst legal services','gst advocate','gst lawyer','rcm'],
-    q:'What GST applies to legal services?',
-    a:'Advocates to <strong>business entities</strong>: <strong>18% GST under Reverse Charge Mechanism (RCM)</strong> — the business client pays GST to the government directly, the advocate doesn\'t collect it. Advocates to <strong>individuals</strong>: exempt. Advocates to other advocates (joint cases): exempt. Senior Advocates to law firms/advocates: 18% forward charge (they collect it).' },
-  { cat:'Tax Law', keywords:['income tax advocate','professional tax','section 44ada','presumptive'],
-    q:'How are advocates taxed on income?',
-    a:'(1) <strong>Section 44ADA</strong>: if turnover ≤ ₹75 lakh, 50% is deemed profit — no books of accounts required. (2) Above ₹75 lakh: maintain books + tax audit under Section 44AB. (3) <strong>TDS Section 194J</strong>: companies/firms deduct 10% TDS on fees paid to advocates. (4) Advance tax: quarterly instalments in June, September, December, March. Chambers rent, clerk salaries, library, and travel are all deductible expenses.' },
-  { cat:'Tax Law', keywords:['capital gains','property sale tax','shares tax','ltcg','stcg'],
-    q:'What are the capital gains tax rules after Budget 2024?',
-    a:'<strong>Budget 2024 changes</strong>: STCG on listed equity/MF: increased to <strong>20%</strong> (was 15%). LTCG on listed equity/MF: increased to <strong>12.5%</strong> above ₹1.25 lakh exemption (was 10% above ₹1 lakh). LTCG on immovable property: <strong>12.5% without indexation</strong> (indexation benefit removed). Reinvestment exemptions: Section 54 (residential property, ₹10 crore cap), Section 54EC (bonds, ₹50 lakh cap).' },
-  // IP
-  { cat:'IP Law', keywords:['trademark','register trademark','brand name','logo'],
-    q:'How do I register a trademark in India?',
-    a:'File TM-A on IP India portal in the relevant Nice Classification class. After examination, the accepted mark is published in the Trade Marks Journal with a <strong>4-month opposition window</strong>. If no opposition, registration certificate is issued. Valid <strong>10 years, infinitely renewable</strong>. Cost: ₹4,500 (e-filing, small entity) to ₹9,000 (large entity) per class. Timeline: 18-24 months.' },
-  { cat:'IP Law', keywords:['copyright','creative work','literary work','copyright duration','original work'],
-    q:'How long does copyright protection last?',
-    a:'<strong>Copyright Act 1957</strong>: automatically on creation — no registration needed. Duration: author\'s lifetime + <strong>60 years</strong>. Court judgments and statutes are not copyrightable (Section 52(1)(q)). Registration at the Copyright Office (optional) provides prima facie evidence of ownership. Fair dealing for research, criticism, and education is permitted.' },
-  { cat:'IP Law', keywords:['patent','invention','20 years','patent india','new invention'],
-    q:'How does patent protection work in India?',
-    a:'<strong>Patents Act 1970</strong>: protects new, inventive, industrially applicable inventions for <strong>20 years</strong>. Not patentable: discoveries, mathematical methods, business methods, computer programs per se, medical treatments, traditional knowledge. File complete specification at Patent Office → publication after 18 months → examination → grant/refusal. India is a PCT signatory for international applications.' },
-  // CONSTITUTIONAL
-  { cat:'Constitutional', keywords:['fundamental rights','article 21','right to life','part iii'],
-    q:'What are the key Fundamental Rights?',
-    a:'<strong>Part III Constitution</strong>: Article 14 — equality (includes arbitrariness doctrine); Article 19 — six freedoms including speech, movement, profession (subject to reasonable restrictions); Article 20 — protection against double jeopardy, self-incrimination, ex post facto laws; Article 21 — right to life and personal liberty (expanded to include privacy, dignity, health, livelihood by the Supreme Court); Article 32 — right to move the SC for enforcement.' },
-  { cat:'Constitutional', keywords:['writ','habeas corpus','mandamus','certiorari','prohibition','quo warranto'],
-    q:'What are the five writs under the Constitution?',
-    a:'(1) <strong>Habeas Corpus</strong> — challenges illegal detention; most urgent, no locus standi restriction; (2) <strong>Mandamus</strong> — compels a public authority to perform its duty; (3) <strong>Prohibition</strong> — prevents an inferior court from exceeding jurisdiction; (4) <strong>Certiorari</strong> — quashes an already passed order for excess of jurisdiction or violation of natural justice; (5) <strong>Quo Warranto</strong> — challenges a person\'s right to hold public office.' },
-  // CONSUMER
-  { cat:'Consumer Law', keywords:['consumer complaint','consumer forum','district forum','consumer court'],
-    q:'How do I file a consumer complaint?',
-    a:'(1) Optionally send a legal notice first; (2) File on <strong>e-daakhil.nic.in</strong> or physically at the appropriate Commission; (3) Pecuniary jurisdiction: District Commission up to ₹50 lakh, State up to ₹2 crore, NCDRC above ₹2 crore; (4) Attach bills, receipts, correspondence; (5) Pay nominal fee; (6) Commission attempts mediation first, then proceeds to evidence and arguments; (7) Remedies include replacement, refund, compensation, and punitive damages up to ₹10 lakh.' },
-  { cat:'Consumer Law', keywords:['consumer rights','what rights consumer','cpa 2019'],
-    q:'What are the key consumer rights under CPA 2019?',
-    a:'<strong>Consumer Protection Act 2019</strong>: Right to safety, information, choice, be heard, redressal, and education. New additions: regulation of e-commerce (mandatory disclosure of all charges), strict product liability (manufacturer/seller liable for defective products), unfair contracts are void. The <strong>CCPA</strong> has suo motu powers, can recall products, and initiate class action complaints.' },
-];
 
-// ── Greeting suggestions shown initially ─────────────────────────────────
-const BOT_SUGGESTIONS = [
-  'How do I add a client?',
-  'How does the task workflow work?',
-  'What are the limitation periods for civil suits?',
-  'How do I get an interim injunction?',
-  'How does bail work in non-bailable offences?',
-  'What is the DPDP Act 2023?',
-  'How do I evict a tenant?',
-  'How are advocates taxed?',
-];
+// ══════════════════════════════════════════════════════════
+// SYSTEM HELP
+// ══════════════════════════════════════════════════════════
+{ cat:'System', keywords:['add client','new client','create client','how to client'],
+  q:'How do I add a new client?',
+  a:'Click <strong>New Client</strong> in the top bar. A conflict-of-interest checker runs at the top — type the opposite party\'s name to flag any existing matches. Fill in the case type, client details, agreed fee, then Save. The system auto-generates a unique Client ID (e.g. CIV-001).' },
 
-// ── State ─────────────────────────────────────────────────────────────────
-let _botOpen = false;
+{ cat:'System', keywords:['record payment','add payment','client paid','fee received'],
+  q:'How do I record a payment from a client?',
+  a:'Two ways: (1) Open the client detail → <strong>Payments tab</strong> → Record Payment. (2) <strong>Finances</strong> page → expand the client row → Record Payment directly. Each entry logs amount, date, method (Cash/UPI/NEFT/Cheque), and an optional reference note.' },
 
+{ cat:'System', keywords:['task workflow','task status','kanban','in review','assign task'],
+  q:'How does the task workflow work?',
+  a:'The Senior Advocate creates and assigns tasks. Flow: <strong>Open → In Progress → In Review → Approved</strong>. Assistants click "Start Work" then "Send for Review" when done. The Senior Advocate can Approve & Close, Rework, or Cancel. Task fields lock once the task moves past Open.' },
+
+{ cat:'System', keywords:['portal','client link','client access','share case'],
+  q:'How does the client portal work?',
+  a:'Open any client detail → click <strong>Portal Link</strong> in the footer. You get a unique URL plus a 4-digit PIN. Share them on <em>separate channels</em> — link by email, PIN by SMS. The client enters the PIN to view their case status, fee summary, payments, and uploaded documents. No LexDesk account needed. Links expire after 90 days.' },
+
+{ cat:'System', keywords:['invoice','generate invoice','pdf invoice','bill client'],
+  q:'How do I generate a PDF invoice?',
+  a:'Open a client detail → click <strong>Invoice</strong> in the footer. A print-ready invoice opens in a new browser tab — use Print → Save as PDF. First fill in your firm details in <strong>Settings → Invoice Settings</strong> (firm name, address, bar number, footer text). Invoice numbers auto-increment.' },
+
+{ cat:'System', keywords:['group chat','group','new group','create group','team group'],
+  q:'How do I create a group chat?',
+  a:'Go to <strong>Messages</strong> → click <strong>New Group</strong> at the bottom of the contact list. Give the group a name, select members, and create. The Senior Advocate is automatically added as a group admin. Admins can rename the group and add/remove members using the ⚙ gear icon next to the group name.' },
+
+{ cat:'System', keywords:['search message','find contact','message search'],
+  q:'How do I find a specific person to message?',
+  a:'The Messages sidebar has a search bar at the top. Type a name to filter Direct Messages and Groups simultaneously. Results update as you type.' },
+
+{ cat:'System', keywords:['court deadline','deadline rules','filing calculator','statute deadline'],
+  q:'How do court filing deadline rules work?',
+  a:'Go to <strong>Admin → Deadline Rules</strong>. Rules like "Written Statement: 30 days after case creation" are pre-seeded with 18 common Indian statutes (CPC, CrPC, Limitation Act, CERT-In, DPDP Act). Open any client → <strong>Deadlines tab</strong> to see all computed deadlines based on that case\'s dates. Red = overdue, orange = within 30 days.' },
+
+{ cat:'System', keywords:['custom role','permission','hierarchy','team role','assign role'],
+  q:'How do I set up team roles and hierarchy?',
+  a:'Go to <strong>Admin → Roles</strong>. Create roles like "Junior Advocate" or "Senior Assistant" with 9 granular permission toggles (view clients, add clients, delete clients, assign tasks, view finances, manage users, export, etc.). Assign roles from <strong>Users</strong> by editing any team member. The hierarchy strip in the Users page shows member count per role.' },
+
+{ cat:'System', keywords:['archive user','remove user','permanently remove','leave organization'],
+  q:'How do I archive or remove a team member?',
+  a:'Go to <strong>Users</strong>. Archive button (📦) removes access but keeps all their data — they can be restored. Permanently Remove (🗑) deletes the profile forever. The Founder (first signup) is fully protected — they can never be archived or removed by anyone.' },
+
+{ cat:'System', keywords:['forgot password','reset password','cant login','change password'],
+  q:'How do I reset or change my password?',
+  a:'On the login screen click <strong>Forgot Password?</strong> — enter your email and you\'ll receive a reset link from Supabase (noreply@mail.app.supabase.io). Clicking the link opens LexDesk with a Change Password prompt. You can also change your password anytime under <strong>Settings → Change Password</strong>.' },
+
+{ cat:'System', keywords:['conflict check','opposite party','conflict interest'],
+  q:'How does the conflict of interest checker work?',
+  a:'When adding a new client, there\'s a search field at the top of the form. Type the opposite party\'s name — the system instantly scans all existing clients and their opposite-party fields and shows a red warning if a match is found. You can still proceed but the conflict is documented.' },
+
+{ cat:'System', keywords:['note share','private note','team note','share note'],
+  q:'How do I share a note with a team member?',
+  a:'Go to <strong>Notes</strong> → open your note → click <strong>Share</strong>. Assign Viewer (read-only) or Editor permission. You can change or revoke access at any time. Tick "Send chat message" to notify them instantly. Note edit history is visible to the note owner.' },
+
+{ cat:'System', keywords:['theme','appearance','dark mode','light mode','colour','customise'],
+  q:'How do I customise my theme?',
+  a:'Go to <strong>Settings → Appearance & Theme</strong>. You can change: (1) <strong>Base Mode</strong> — Dark Glass or Light Glass; (2) <strong>Accent Colour</strong> — Gold, Blue, Teal, Rose, Violet, Emerald, Amber, Slate; (3) <strong>Background Tint</strong> — Midnight, Charcoal, Navy, Forest, Plum; (4) <strong>Text Contrast</strong> — Standard, High, Soft. Your theme is saved to your profile and syncs across devices.' },
+
+{ cat:'System', keywords:['chatbot','bot','disable chatbot','turn off chatbot'],
+  q:'How do I turn the chatbot on or off?',
+  a:'Go to <strong>Settings</strong> → scroll to the Chatbot toggle and switch it off. The floating robot button disappears. Turn it back on from the same settings row. Chat history clears automatically every 2 days.' },
+
+{ cat:'System', keywords:['finances','firm finances','outstanding balance','fee tracker'],
+  q:'How does the Finances page work?',
+  a:'Visible to the Senior Advocate only. Three summary cards show Total Fees Quoted, Total Collected, and Outstanding Balance firm-wide. Every client appears in a list with a payment progress bar and Paid/Partial/Unpaid badge. Expand any client row to see the full dated ledger and record new payments directly.' },
+
+// ══════════════════════════════════════════════════════════
+// BNS / BNSS / BSA 2024
+// ══════════════════════════════════════════════════════════
+{ cat:'BNS/BNSS 2024', keywords:['bns','bnss','bsa','new criminal law','2024','bharatiya nyaya','replaced ipc'],
+  q:'What changed with BNS, BNSS and BSA from July 2024?',
+  a:'Three new codes replaced colonial laws effective <strong>1 July 2024</strong>:<br/>(1) <strong>Bharatiya Nyaya Sanhita (BNS) 2023</strong> — replaces IPC 1860. Defines crimes and punishments. New: organised crime (Section 111), terrorism (Section 113), crimes against women consolidated in Chapter V.<br/>(2) <strong>Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023</strong> — replaces CrPC 1973. New: Zero FIR, 7-day police custody in tranches, mandatory video-recording of searches, trial in absentia, 90-day max undertrial detention before bail entitlement.<br/>(3) <strong>Bharatiya Sakshya Adhiniyam (BSA) 2023</strong> — replaces Evidence Act 1872. Electronic records explicitly admissible, secondary evidence rules expanded.' },
+
+{ cat:'BNS/BNSS 2024', keywords:['zero fir','file fir anywhere','fir anywhere','no jurisdiction fir'],
+  q:'What is Zero FIR under BNSS?',
+  a:'Under <strong>Section 173 BNSS</strong>, a Zero FIR can be filed at <em>any police station</em> regardless of jurisdiction. The receiving station must register the FIR and transfer it to the station having jurisdiction within 15 days. The accused cannot object to investigation on grounds that the FIR was filed at a non-jurisdictional station. This was a major reform — earlier <em>Lalita Kumari v UP (2013)</em> mandated registration but still required the correct station.' },
+
+{ cat:'BNS/BNSS 2024', keywords:['section 111 bns','organised crime','bns 111','criminal organisation'],
+  q:'What is Section 111 BNS (organised crime)?',
+  a:'<strong>Section 111 BNS</strong> — new standalone provision for organised crime (did not exist in IPC). Defines organised crime as any continuing unlawful activity by an organised crime syndicate involving violence, intimidation, coercion, or other unlawful means. Punishment: death or life imprisonment + fine ≥ ₹10 lakh. Mere membership of such a syndicate: 5-10 years. Section 112 covers petty organised crime (separately).' },
+
+{ cat:'BNS/BNSS 2024', keywords:['community service','bns punishment','new punishment','community service sentence'],
+  q:'What is the community service punishment introduced in BNS?',
+  a:'<strong>BNS introduces community service</strong> as a new form of punishment — the first time in Indian criminal law. It is an alternative to imprisonment or fine for minor offences. E.g., Section 202 BNS (attempt to commit suicide) prescribes community service instead of the old IPC imprisonment. Courts can award it for specified offences where the accused has no criminal history. The form and duration of service are at the court\'s discretion.' },
+
+{ cat:'BNS/BNSS 2024', keywords:['undertrial bail','90 days bail','bnss 479','default bail undertrial'],
+  q:'What is the undertrial bail provision under BNSS?',
+  a:'<strong>Section 479 BNSS</strong> (formerly Section 436A CrPC but significantly modified): An undertrial prisoner who has served <strong>one-third of the maximum sentence</strong> for the offence (half for a first-time offender) is entitled to bail as a matter of right. Courts must conduct a review every 6 months. The provision also allows bail if the trial is not likely to be completed within the prescribed period. This replaces the earlier half-period rule under Section 436A.' },
+
+// ══════════════════════════════════════════════════════════
+// CIVIL LAW — CPC, EVIDENCE, CONTRACT
+// ══════════════════════════════════════════════════════════
+{ cat:'Civil Law', keywords:['limitation period','time limit','how long','when to file','suit limitation'],
+  q:'What are the limitation periods for common civil suits?',
+  a:'Under <strong>Limitation Act 1963</strong>:<br/>• Contract breach — 3 years from breach (Article 55)<br/>• Money recovery — 3 years<br/>• Recovery of immovable property — 12 years (Article 65)<br/>• Mortgage — 12 years for redemption, 30 years for foreclosure<br/>• Tort/negligence — 3 years from date damage occurs<br/>• Setting aside decree — 30 days (for parties) or 90 days (for others)<br/>Section 5 allows condonation of delay for sufficient cause (except Articles 114, 116, 117).' },
+
+{ cat:'Civil Law', keywords:['injunction','interim injunction','stay','temporary injunction','order 39'],
+  q:'How do I get an interim injunction?',
+  a:'File an IA under <strong>Order XXXIX CPC</strong> with a supporting affidavit. Three cumulative requirements (all must be satisfied): (1) <em>Prima facie case</em> — arguable, not necessarily strong; (2) <em>Balance of convenience</em> — you suffer more if refused than defendant suffers if granted; (3) <em>Irreparable injury</em> — damages cannot adequately compensate. Ex-parte order: show extreme urgency, file affidavit explaining why notice should not be given. Key cases: <em>Dalpat Kumar v Prahlad Singh AIR 1992 SC 1620</em>; <em>Wander Ltd v Antox India (1990) Supp SCC 727</em>.' },
+
+{ cat:'Civil Law', keywords:['res judicata','same case again','issue estoppel','constructive res judicata'],
+  q:'What is res judicata and constructive res judicata?',
+  a:'<strong>Section 11 CPC — Res Judicata</strong>: Bars re-litigation of issues <em>directly and substantially</em> in issue, between the same parties (or their privies), decided by a competent court. All six conditions under the section must be satisfied. <strong>Constructive res judicata (Explanation IV)</strong>: Bars issues that <em>ought to have been raised</em> in the former suit. A party cannot split a cause of action or leave out issues to litigate later. Distinction: res judicata bars re-agitation of decided issues; constructive res judicata bars issues that should have been raised. Key case: <em>Satyadhyan Ghosal v Deoranjin Debi AIR 1960 SC 941</em>.' },
+
+{ cat:'Civil Law', keywords:['specific performance','enforce contract','specific relief','section 10'],
+  q:'When can specific performance of a contract be enforced?',
+  a:'Under <strong>Specific Relief Act 1963 (amended 2018)</strong>, Section 10 now makes specific performance of contracts <em>mandatory</em> — the 2018 amendment removed the court\'s discretion to refuse merely because damages are adequate. Exceptions: contracts requiring personal skill/ability, contracts dependent on continued supervision, contracts with no objective assessment of performance, contracts that have become unlawful. Section 20 allows substituted performance as an alternative. Section 41 still allows courts to award compensation in lieu of or in addition to specific performance.' },
+
+{ cat:'Civil Law', keywords:['summary suit','order 37','negotiable instrument suit','bill suit'],
+  q:'What is a summary suit under Order XXXVII CPC?',
+  a:'<strong>Order XXXVII CPC</strong> — available for suits on: bills of exchange, hundis, promissory notes, or claims for a liquidated sum under a written contract. Plaintiff files suit with a special summons. Defendant must apply for <em>leave to defend</em> within 10 days of service (extendable by court). If leave refused — immediate decree for plaintiff. If leave granted conditionally — defendant may be asked to deposit security. Key advantage: avoids full trial if defendant has no arguable defence. Court cannot refuse leave on merits alone — must be shown there is a triable issue.' },
+
+// ══════════════════════════════════════════════════════════
+// CRIMINAL LAW — BNS provisions
+// ══════════════════════════════════════════════════════════
+{ cat:'Criminal Law', keywords:['bail','bail application','non bailable','apply bail','section 480'],
+  q:'How do I apply for bail under BNSS 2023?',
+  a:'<strong>Section 480 BNSS</strong> (replaces 437 CrPC): For non-bailable offences, application goes before the Magistrate. Court considers: gravity of offence, antecedents, flight risk, evidence tampering risk, impact on victims/society. <strong>Section 483 BNSS</strong> (replaces 439 CrPC): Sessions Court or High Court bail — broader discretion, can impose conditions. <strong>Section 482 BNSS</strong> (replaces 438 CrPC): Anticipatory bail — apply before arrest to Sessions Court or HC; on arrest, accused released on bail immediately. Conditions commonly imposed: reporting to police, surrendering passport, not contacting complainant.' },
+
+{ cat:'Criminal Law', keywords:['arrested person rights','custody rights','police arrest rights','article 22'],
+  q:'What are the rights of an arrested person?',
+  a:'Constitutional + BNSS rights:<br/>(1) Article 22 — Right to know grounds of arrest; right to consult a lawyer of choice immediately;<br/>(2) Section 47 BNSS — Inform one friend/relative of arrest immediately;<br/>(3) Section 53 BNSS — Right to medical examination by government doctor;<br/>(4) Article 20(3) — Right against self-incrimination;<br/>(5) Article 22(2) — Production before Magistrate within 24 hours;<br/>(6) <em>D.K. Basu v WB (1997) 1 SCC 416</em> — Arrest memo, witness to arrest, identity of arresting officer, no torture.<br/>(7) Women: Cannot be arrested after sunset or before sunrise except with female officer and written prior permission of Magistrate (Section 43(5) BNSS).' },
+
+{ cat:'Criminal Law', keywords:['murder','section 101 bns','culpable homicide','325 bns','302 ipc'],
+  q:'What is murder under BNS 2023?',
+  a:'<strong>Section 101 BNS</strong> (replaces Section 302 IPC): Murder — death caused intentionally or with knowledge that the act is imminently dangerous. Punishment: death or life imprisonment + fine. <strong>Section 100 BNS</strong> (replaces Section 299/304 IPC): Culpable homicide not amounting to murder — 10 years or life + fine (Part 1: intentional act); up to 10 years + fine (Part 2: knowledge without intention). The classic distinction from <em>Reg v Govinda (1876)</em> still applies: presence/absence of intention to cause death or injury likely to cause death separates the two.' },
+
+{ cat:'Criminal Law', keywords:['rape','sexual assault','section 63 bns','pocso','gangrape'],
+  q:'What are the rape/sexual assault provisions under BNS?',
+  a:'<strong>Section 63 BNS</strong> (replaces 375 IPC): Rape — non-consensual sexual intercourse. Punishment (Section 64): 10 years min – life + fine. Aggravated rape (Section 65): 20 years min – life. Gang rape (Section 70): 20 years min – life or death. Sexual assault other than rape now separately defined (Section 74 BNS). <strong>POCSO Act 2012</strong> continues to apply for offences against children (under 18) — special courts, stricter timelines (trial within 1 year), child-friendly procedures. New in BNS: sexual intercourse by deceit of marriage (Section 69) — 10 years + fine.' },
+
+{ cat:'Criminal Law', keywords:['cheating','fraud','section 318 bns','420 ipc','dishonest'],
+  q:'What constitutes cheating under BNS?',
+  a:'<strong>Section 318 BNS</strong> (replaces 420 IPC): Cheating — deceiving a person and dishonestly inducing them to deliver property or alter/destroy a document. Section 318(4): Cheating with value exceeding ₹50 lakh — 7 years + fine. For corporate fraud: <strong>Section 447 Companies Act 2013</strong> runs alongside (6 months–10 years imprisonment + fine ≥ amount involved). Distinction: cheating under BNS requires both deception AND inducement to act; criminal breach of trust (Section 316 BNS, replaces 405 IPC) involves misappropriation of property entrusted.' },
+
+{ cat:'Criminal Law', keywords:['extortion','ransom','section 308 bns','384 ipc','threat'],
+  q:'What is extortion and what are the penalties?',
+  a:'<strong>Section 308 BNS</strong> (replaces 384 IPC): Extortion — intentionally putting a person in fear of injury to dishonestly induce delivery of property or doing an act. Punishment: up to 3 years + fine. Aggravated extortion (Section 309): putting person in fear of death/grievous hurt or accusing of serious crime — up to 10 years + fine. Kidnapping for ransom (Section 140 BNS): death or life imprisonment. Cyber extortion (Section 66E IT Act + Section 308 BNS): both may apply. For ransomware attacks, also report to CERT-In within 6 hours.' },
+
+{ cat:'Criminal Law', keywords:['anticipatory bail','438 crpc','section 482 bnss','anticipatory','fear of arrest'],
+  q:'How does anticipatory bail work under BNSS?',
+  a:'<strong>Section 482 BNSS</strong> (replaces 438 CrPC): Application when a person has reason to believe they may be arrested for a non-bailable offence. Filed before Sessions Court or High Court. Court considers: nature and gravity of accusation, antecedents, possibility of flight, whether accusation is made to humiliate. On arrest, person released on bail immediately — anticipatory bail operates from the moment of arrest. Conditions: reporting to police, not leaving country, surrendering passport, not tampering with evidence, not contacting complainant. The anticipatory bail may be limited in time or made absolute — court has full discretion per <em>Sushila Aggarwal v State (Delhi) (2020) 5 SCC 1</em> (SC Constitution Bench).' },
+
+// ══════════════════════════════════════════════════════════
+// GST & TAX LAW
+// ══════════════════════════════════════════════════════════
+{ cat:'Tax Law', keywords:['gst advocate','rcm legal services','gst lawyer','gst on fees'],
+  q:'What GST applies to legal services by advocates?',
+  a:'Under <strong>GST Notification 13/2017-CT (Rate)</strong>:<br/>• Advocate/law firm to <strong>business entity</strong>: <strong>18% GST under Reverse Charge Mechanism (RCM)</strong> — the business client pays GST directly to govt, not the advocate.<br/>• Advocate to <strong>individual/personal</strong>: <strong>Exempt</strong> (Entry 45, Exemption Notification).<br/>• Advocate to <strong>another advocate</strong> (joint cases): <strong>Exempt</strong>.<br/>• <strong>Senior Advocate</strong> to another advocate/law firm: 18% <em>forward charge</em> — senior advocate collects and deposits.<br/>• Advocate\'s turnover > ₹20 lakh: registration required, but since most supplies are exempt/RCM, most advocates don\'t collect GST and need not register unless they provide other taxable services.' },
+
+{ cat:'Tax Law', keywords:['income tax advocate','section 44ada','44ab','professional tax return'],
+  q:'What are the income tax obligations for advocates?',
+  a:'(1) <strong>Section 44ADA</strong>: If gross receipts ≤ ₹75 lakh (Budget 2024 limit), 50% is deemed profit — no books of accounts required, audit not needed. (2) Above ₹75 lakh: Maintain books under Section 44AA, mandatory tax audit under Section 44AB. (3) <strong>TDS — Section 194J</strong>: Companies and firms deduct 10% TDS on professional fees paid to advocates. (4) <strong>Advance tax</strong>: Quarterly instalments — 15 June (15%), 15 Sept (45%), 15 Dec (75%), 15 March (100%). (5) Deductible expenses: office/chamber rent, clerk salaries, library subscriptions, court fees, professional body membership, travel for cases.' },
+
+{ cat:'Tax Law', keywords:['capital gains 2024','ltcg','stcg','budget 2024 capital gains','indexation removed'],
+  q:'What changed in capital gains tax in Budget 2024?',
+  a:'<strong>Major Budget 2024 changes (effective 23 July 2024)</strong>:<br/>• <strong>STCG on listed equity/equity MF</strong>: Increased from 15% → <strong>20%</strong> (holding ≤ 12 months)<br/>• <strong>LTCG on listed equity/equity MF</strong>: Increased from 10% → <strong>12.5%</strong> above ₹1.25 lakh exemption (holding > 12 months)<br/>• <strong>LTCG on immovable property</strong>: Rate reduced from 20% (with indexation) → <strong>12.5% without indexation</strong> — taxpayers born before 2001 who hold pre-2001 property may claim cost inflation but lose indexation benefit<br/>• Holding period for all other assets: < 24 months = STCG; ≥ 24 months = LTCG<br/>• Section 54 exemption cap: ₹10 crore (for reinvestment in residential property).' },
+
+{ cat:'Tax Law', keywords:['gst input tax credit','itc','itc blocked','section 17(5)'],
+  q:'What are the blocked credits under GST Section 17(5)?',
+  a:'<strong>Section 17(5) CGST Act</strong> — Input Tax Credit (ITC) is blocked (cannot be claimed) on:<br/>(a) Motor vehicles for transportation of persons with seating ≤ 13 (unless used for further supply of such vehicles, transport of passengers/services, driving school, or tour operator);<br/>(b) Food, beverages, beauty treatment, health services, cosmetic/plastic surgery, club memberships, rent-a-cab (unless same category of outward supply or obligation under employment law);<br/>(c) Life/health insurance (unless obligation under any law or for supply of similar insurance);<br/>(d) Works contract services for construction of immovable property (not plant and machinery);<br/>(e) Goods/services for personal consumption;<br/>(f) Goods lost, stolen, destroyed, written off.' },
+
+{ cat:'Tax Law', keywords:['income tax notice','section 148','section 143','income tax scrutiny','reassessment'],
+  q:'What are the common income tax notices and how to respond?',
+  a:'<strong>Common notices</strong>:<br/>• <strong>Section 143(1)</strong>: Intimation after return processing — check for mismatches; respond within 30 days if demand; can file rectification under Section 154.<br/>• <strong>Section 143(2)</strong>: Scrutiny selection — time limit to issue is 6 months from end of FY in which return filed; respond to questionnaire with supporting documents.<br/>• <strong>Section 148/148A</strong> (amended 2021): Reassessment — Section 148A inquiry mandatory before issue of 148 notice; taxpayer gets 7+ days to respond; reopening up to 3 years (escaped income ≥ ₹50 lakh: up to 10 years); Supreme Court in <em>Union of India v Ashish Agarwal (2022)</em> validated the amended procedure retroactively.<br/>• Always respond through the <strong>e-filing portal (income tax.gov.in)</strong>; keep acknowledgement.' },
+
+// ══════════════════════════════════════════════════════════
+// COMPANIES ACT & CORPORATE
+// ══════════════════════════════════════════════════════════
+{ cat:'Companies Act', keywords:['companies act','director duties','section 166','fiduciary duty'],
+  q:'What are the duties of directors under Companies Act 2013?',
+  a:'<strong>Section 166 Companies Act 2013</strong>:<br/>(1) Act in good faith in best interests of company, shareholders, employees, community, environment;<br/>(2) Exercise due care, skill, and diligence of a reasonably diligent person with same knowledge;<br/>(3) Exercise independent judgment (cannot be fettered by any external direction);<br/>(4) Avoid conflict of interest — must disclose under Section 184 even if interest is indirect;<br/>(5) Not achieve undue gain — return any gain to company;<br/>(6) Not assign directorship.<br/>Penalties: Section 166(7) — ₹1-5 lakh per default per day. Section 447 — fraud (imprisonment 6 months – 10 years + fine if dishonest intent). Section 149(8) read with Schedule IV — additional duties for independent directors including protecting minority shareholders.' },
+
+{ cat:'Companies Act', keywords:['ibc','insolvency','nclt','cirp','resolution plan','bankruptcy'],
+  q:'How does IBC insolvency resolution work?',
+  a:'<strong>IBC 2016 — CIRP (Corporate Insolvency Resolution Process)</strong>:<br/>Trigger: Default of ₹1 crore+ (raised from ₹1 lakh). Filed by: financial creditor (Section 7), operational creditor (Section 9), or corporate debtor (Section 10) before NCLT.<br/>NCLT admits within 14 days → IRP appointed → <strong>Moratorium</strong> declared (no suits, no asset transfers) → CoC formed (financial creditors only) → Resolution applicants submit plans → CoC approves with <strong>66% vote</strong> → NCLT approves → Implementation.<br/>Timeline: <strong>180 days</strong> (extendable to 330 days max including litigation). If no plan → liquidation.<br/>Key cases: <em>Essar Steel India v Satish Kumar Gupta (2019)</em> — CoC\'s commercial wisdom is paramount, operational creditors cannot be discriminated. <em>Swiss Ribbons v Union of India (2019)</em> — constitutional validity upheld.' },
+
+{ cat:'Companies Act', keywords:['section 447','fraud companies act','corporate fraud','mca fraud'],
+  q:'What constitutes fraud under Section 447 Companies Act?',
+  a:'<strong>Section 447 Companies Act 2013</strong>: Fraud = any act, omission, concealment, abuse of position committed with intent to deceive, to gain undue advantage, or to injure the interests of company/shareholders/creditors/employees. Punishment: imprisonment <strong>6 months – 10 years</strong> + fine (not less than amount involved, up to 3×). For fraud involving <em>public interest</em> or amount > ₹10 lakh: minimum 3 years. No compounding allowed. Professionals (CA/CS/CWA/advocates) involved in fraud: 6 months – 10 years + fine. SFIO (Serious Fraud Investigation Office) investigates under Section 212 — arrest powers without warrant.' },
+
+{ cat:'Companies Act', keywords:['startup exemptions','opc','one person company','startup india','angel tax'],
+  q:'What are the key startup and OPC provisions?',
+  a:'<strong>Startup India / DPIIT Recognition</strong>: Eligible for: tax holiday (3 of first 10 years under Section 80-IAC), self-certification under labour laws, fast-track patent examination, Section 68 ITA protection (angel tax exemption if total paid-up share capital + securities premium ≤ ₹25 crore after the issue). Angel Tax under Section 56(2)(viib) — for unlisted companies issuing shares at premium above fair value — DPIIT-recognised startups exempt. <strong>One Person Company (OPC)</strong>: single member with nominee, minimum ₹1 lakh paid-up, automatic conversion to private limited if paid-up capital > ₹50 lakh or turnover > ₹2 crore. OPC exempted from many provisions (AGM, rotation of auditors, etc.).' },
+
+// ══════════════════════════════════════════════════════════
+// CYBER LAW — IT Act + DPDP + CERT-In
+// ══════════════════════════════════════════════════════════
+{ cat:'Cyber Law', keywords:['it act offences','hacking','cyber crime','section 66','computer offences'],
+  q:'What are the main offences under the IT Act 2000?',
+  a:'<strong>IT Act 2000 key sections</strong>:<br/>• S.43: Civil penalty for unauthorised access/damage — up to ₹1 crore<br/>• S.66: Computer-related offences (hacking, data theft) — 3 years + ₹5 lakh<br/>• S.66B: Receiving stolen computer resource — 3 years + ₹1 lakh<br/>• S.66C: Identity theft — 3 years + ₹1 lakh<br/>• S.66D: Cheating by personation using computer — 3 years + ₹1 lakh<br/>• S.66E: Privacy violation (capturing/transmitting private images) — 3 years<br/>• S.66F: Cyber terrorism — life imprisonment<br/>• S.67: Publishing obscene material — 3 years + ₹5 lakh (first); 5 years + ₹10 lakh (repeat)<br/>• S.67A: Sexually explicit material — 5 years (first), 7 years (repeat)<br/>• S.67B: Child sexual abuse material — 5 years (first), 7 years (repeat)<br/>S.66A was struck down in <em>Shreya Singhal v UOI (2015)</em>.' },
+
+{ cat:'Cyber Law', keywords:['cert-in','cyber incident reporting','6 hours','certify-in report','mandatory report'],
+  q:'What are the CERT-In mandatory incident reporting obligations?',
+  a:'Under <strong>CERT-In Directions 2022</strong>: 20 categories of cybersecurity incidents must be reported within <strong>6 hours of detection/noticing</strong> (not 24/72 hours). Covered entities: all service providers, intermediaries, data centres, corporate bodies, government organisations. Obligations: (1) Report via cert-in.org.in portal; (2) Maintain all ICT logs within India for <strong>180 days</strong>; (3) Sync system clocks with NTP servers traceable to NTP.gov.in or NPLI; (4) VPN/Cloud/VPS providers: subscriber records for <strong>5 years</strong>; (5) Root cause analysis report within 30 days. Penalty: Section 70B(7) IT Act — imprisonment up to 1 year + fine. <em>Note: These requirements apply even to small companies if they are service providers/intermediaries.</em>' },
+
+{ cat:'Cyber Law', keywords:['dpdp act','data protection','personal data','data principal','data fiduciary'],
+  q:'What are the key obligations under DPDP Act 2023?',
+  a:'<strong>Digital Personal Data Protection Act 2023</strong> — India\'s first comprehensive data privacy law:<br/>• <strong>Lawful basis</strong>: Consent (free, specific, informed, unconditional, unambiguous) or legitimate uses (e.g., state functions, medical emergencies, employment).<br/>• <strong>Data Fiduciary duties</strong>: Purpose limitation, data minimisation, accuracy, storage limitation, security safeguards (reasonable), breach notification to Data Protection Board and data principals.<br/>• <strong>Data Principal rights</strong>: Access, correction, erasure, grievance redressal, nomination of another person for data access on death/incapacity.<br/>• <strong>Significant Data Fiduciaries</strong> (notified): Must appoint DPO (India-based), conduct DPIA, appoint Data Auditor.<br/>• <strong>Cross-border transfer</strong>: Only to notified whitelist countries.<br/>• <strong>Penalties</strong>: Up to ₹250 crore per violation.<br/>• Children\'s data: no tracking/behavioural monitoring; verifiable parental consent required.' },
+
+// ══════════════════════════════════════════════════════════
+// FAMILY LAW
+// ══════════════════════════════════════════════════════════
+{ cat:'Family Law', keywords:['divorce','grounds divorce','hma','mutual consent','section 13'],
+  q:'What are the grounds for divorce under the Hindu Marriage Act?',
+  a:'<strong>Section 13 HMA 1955 — Fault grounds</strong>: (1) Adultery; (2) Cruelty (physical or mental); (3) Desertion for ≥ 2 continuous years; (4) Conversion to another religion; (5) Unsoundness of mind for ≥ 3 continuous years; (6) Incurable leprosy; (7) Communicable venereal disease; (8) Renunciation of world; (9) Presumed dead (7 years unheard of). <strong>Section 13-B — Mutual Consent</strong>: Both file joint petition after living separately ≥ 1 year; 6-month cooling period (courts can waive if marriage is irretrievably broken — <em>Amardeep Singh v Harveen Kaur 2017 8 SCC 746</em>); second motion within 6-18 months. Under <em>Shilpa Sailesh v Varun Sreenivasan (2023) 12 SCC 544</em>, Supreme Court under Article 142 can dissolve marriage on irretrievable breakdown even without HMA grounds.' },
+
+{ cat:'Family Law', keywords:['maintenance','alimony','section 125','spouse maintenance','BNSS 144'],
+  q:'How is maintenance determined under Indian law?',
+  a:'Multiple overlapping provisions:<br/>• <strong>Section 144 BNSS</strong> (replaces 125 CrPC): Magistrate can award for wife, legitimate/illegitimate minor children, parents unable to maintain themselves. Quantum: based on means and needs, no ceiling. Interim maintenance pending final order: Section 145 BNSS.<br/>• <strong>Section 24 HMA</strong>: Maintenance pendente lite during matrimonial proceedings.<br/>• <strong>Section 25 HMA</strong>: Permanent alimony — lump sum or monthly; modified if circumstances change. <em>Rajnesh v Neha (2020) 14 SCC 768</em>: SC mandated uniform affidavit of assets/liabilities; factors — income of both parties, status of living during marriage, number and age of children, wife\'s earning capacity, reasonable needs. Cannot be waived by prior agreement (<em>Maya Devi v Jagdish Prasad 2007</em>).' },
+
+{ cat:'Family Law', keywords:['child custody','guardian','section 6 hmga','best interest','hague convention'],
+  q:'How is child custody decided in India?',
+  a:'Governed by <strong>Guardians and Wards Act 1890</strong> (secular) and <strong>Hindu Minority and Guardianship Act 1956</strong> (Hindus). <strong>Paramount principle</strong>: welfare/best interests of the child — not ownership rights of parents. Under HMGA Section 6(a): mother preferred for children below 5 years. Father is natural guardian for Hindu children after 5, but courts give it based on fitness. Courts consider: (a) physical and emotional needs of child, (b) financial capacity, (c) bond established, (d) child\'s expressed preference (if old enough), (e) stability of environment, (f) siblings together principle. Joint custody is increasingly granted. <strong>International abduction</strong>: India is NOT a signatory to Hague Convention 1980; HC applies welfare principle under parens patriae jurisdiction — <em>Surya Vadanan v State of TN (2015)</em>.' },
+
+// ══════════════════════════════════════════════════════════
+// LABOUR LAW
+// ══════════════════════════════════════════════════════════
+{ cat:'Labour Law', keywords:['4 labour codes','new labour laws','labour codes india','code on wages'],
+  q:'What are the 4 Labour Codes and their status?',
+  a:'Four codes consolidate 29 central labour laws (all enacted, awaiting state implementation rules):<br/>(1) <strong>Code on Wages 2019</strong>: Merges Minimum Wages Act, Payment of Wages Act, Equal Remuneration Act, Payment of Bonus Act. Universal floor wage. Electronic payment of wages.<br/>(2) <strong>Industrial Relations Code 2020</strong>: Merges Trade Unions Act, ID Act, Industrial Employment (Standing Orders) Act. Retrenchment threshold raised to 300 workers (from 100) for prior government permission requirement.<br/>(3) <strong>Social Security Code 2020</strong>: Merges EPF, ESI, Gratuity, Maternity Benefit, ESIC extended to gig/platform workers. Aggregator (Ola, Swiggy, etc.) to contribute to social security fund for gig workers.<br/>(4) <strong>OSH Code 2020</strong>: Merges Factories Act, Mines Act, Contract Labour Act. Single licence for contract labour, audio-visual contract for migrant workers.<br/>Until notification: <em>old laws continue to apply.</em>' },
+
+{ cat:'Labour Law', keywords:['posh','sexual harassment work','icc','internal committee','posh complaint'],
+  q:'What are employer obligations under the POSH Act 2013?',
+  a:'<strong>Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act 2013</strong>:<br/>Applies to ALL establishments (no employee threshold for ICC). Obligations:<br/>(1) Constitute <strong>ICC</strong> (Internal Complaints Committee) — minimum 4 members, presiding officer must be woman employed at senior level, at least one external member (from NGO/legal background);<br/>(2) Constitute <strong>LCC</strong> (Local Complaints Committee) for establishments with < 10 employees, via District Officer;<br/>(3) Display policy at conspicuous place;<br/>(4) Conduct annual awareness programmes;<br/>(5) ICC inquiry within <strong>90 days</strong> — accused gets 3 working days to respond to complaint, 3 more to respond to inquiry report;<br/>(6) Action within 60 days of ICC report;<br/>(7) Annual report to District Officer.<br/>Non-constitution of ICC: ₹50,000 fine (double for repeat + licence cancellation). Extended to: interns, contractual workers, domestic workers. Gig workers: Code on Social Security 2020 extends protection.' },
+
+{ cat:'Labour Law', keywords:['epf','esic','pf','provident fund','esi compliance'],
+  q:'What are EPF and ESI compliance requirements?',
+  a:'<strong>EPF & MP Act 1952</strong>: Applies to establishments ≥ 20 employees (notified sectors). Contribution: Employee 12% of basic+DA; Employer 12% (8.33% → EPS Pension, 3.67% → EPF, 0.5% → EDLI insurance). UAN is portable. Deadline: contribution by 15th of following month. Non-compliance: damages 5-25% of arrears + prosecution under Section 14 (up to 1-3 years + fine).<br/><strong>ESI Act 1948</strong>: Applies to ≥ 10 employees in notified areas; gross wages ≤ ₹21,000/month (₹25,000 for persons with disability). Contribution: Employee 0.75%, Employer 3.25%. Benefits: unlimited medical (employee + family), sickness (70% wages for 91 days), maternity (26 weeks full wages), disablement, dependants\' benefit. Non-compliance: Section 84-85 ESI Act — imprisonment up to 2 years + fine.' },
+
+// ══════════════════════════════════════════════════════════
+// CONSTITUTIONAL LAW
+// ══════════════════════════════════════════════════════════
+{ cat:'Constitutional', keywords:['fundamental rights','article 21','right to life','privacy','part iii'],
+  q:'What fundamental rights has the Supreme Court recognised under Article 21?',
+  a:'Article 21 — "No person shall be deprived of his life or personal liberty except according to procedure established by law" — has been expansively interpreted. Recognised rights include:<br/>• Right to <strong>privacy</strong> (<em>K.S. Puttaswamy v Union of India 2017</em> — 9-judge bench)<br/>• Right to <strong>livelihood</strong> (<em>Olga Tellis v BMC 1985</em>)<br/>• Right to <strong>health</strong> (<em>Paschim Banga Khet Mazdoor Samity v WB 1996</em>)<br/>• Right to <strong>speedy trial</strong> (<em>Hussainara Khatoon v Home Secretary Bihar 1979</em>)<br/>• Right to <strong>legal aid</strong> (now also Article 39A)<br/>• Right to <strong>education</strong> (now Article 21A, also RTE Act 2009)<br/>• Right to <strong>clean environment</strong> (<em>MC Mehta cases</em>)<br/>• Right to <strong>dignity</strong> (<em>Francis Coralie Mullin v UT of Delhi 1981</em>)<br/>The "procedure" must now be: just, fair, reasonable — not merely enacted by Parliament (Maneka Gandhi 1978 overruling AK Gopalan).' },
+
+{ cat:'Constitutional', keywords:['basic structure','kesavananda','constitutional amendment','parliament limit'],
+  q:'What is the Basic Structure doctrine?',
+  a:'Propounded by a 13-judge bench (7:6 majority) in <strong><em>Kesavananda Bharati v State of Kerala (1973) 4 SCC 225</em></strong>: Parliament can amend ANY part of the Constitution under Article 368 but CANNOT alter its <em>basic structure</em>. Elements include (not exhaustive): supremacy of the Constitution, republic + democratic form, secular character, separation of powers, federal structure, judicial review, rule of law, fundamental rights, unity and integrity. Applied to strike down:<br/>• 42nd Amendment clause excluding judicial review (<em>Minerva Mills v Union of India 1980</em>)<br/>• NJAC (National Judicial Appointments Commission) — struck down in <em>Supreme Court Advocates-on-Record Association v Union of India 2016</em><br/>Even a constitutional amendment creating an irrevocable majority would fail.' },
+
+{ cat:'Constitutional', keywords:['writ','habeas corpus','mandamus','certiorari','article 32','article 226'],
+  q:'What are the five writs and when are they issued?',
+  a:'Under Articles 32 (SC) and 226 (HC):<br/>(1) <strong>Habeas Corpus</strong> ("produce the body"): Challenges illegal detention. Most urgent — courts issue on same day. No locus standi restriction — any person may file. SC can issue even during emergency except in national emergency (Article 359).<br/>(2) <strong>Mandamus</strong> ("we command"): Compels a public authority to perform a <em>public duty</em>. Cannot issue against private persons or for discretionary acts.<br/>(3) <strong>Prohibition</strong>: Issued to inferior court/tribunal to prevent it from exceeding jurisdiction — operates <em>before</em> the act.<br/>(4) <strong>Certiorari</strong>: Quashes an order already passed by inferior court/tribunal for excess of jurisdiction, breach of natural justice, or error of law on the face of record — operates <em>after</em> the act.<br/>(5) <strong>Quo Warranto</strong>: Challenges a person\'s right to hold a public office. Available to any citizen even without personal interest.' },
+
+// ══════════════════════════════════════════════════════════
+// PROPERTY & TRANSFER
+// ══════════════════════════════════════════════════════════
+{ cat:'Property Law', keywords:['transfer of property','tpa','sale deed','property transfer','section 54'],
+  q:'What are the key provisions of the Transfer of Property Act?',
+  a:'<strong>Transfer of Property Act 1882 (TPA)</strong>:<br/>• <strong>Section 5</strong>: Transfer = conveyance of property from living person to living person (inter vivos — not succession).<br/>• <strong>Section 54</strong>: Sale of immovable property > ₹100 must be by registered document. Oral sale of property > ₹100 is invalid. Distinction between agreement to sell and actual sale: agreement to sell creates only personal rights; sale transfers ownership.<br/>• <strong>Section 58</strong>: Mortgage — transfer of interest in specific immovable property as security for money. Types: simple, mortgage by conditional sale, usufructuary, English, equitable, anomalous.<br/>• <strong>Section 105</strong>: Lease — transfer of right to enjoy property for a time or perpetually for consideration (rent). Lease > 1 year: compulsory registration.<br/>• <strong>Section 122</strong>: Gift — transfer without consideration, must be accepted by donee, cannot be revoked except for specific grounds (Section 126).' },
+
+// ══════════════════════════════════════════════════════════
+// CONSUMER LAW
+// ══════════════════════════════════════════════════════════
+{ cat:'Consumer Law', keywords:['consumer complaint','consumer court','district commission','cpa 2019'],
+  q:'How do I file a consumer complaint under the Consumer Protection Act 2019?',
+  a:'<strong>CPA 2019 — jurisdiction</strong>:<br/>• District Consumer Commission: claims up to ₹50 lakh<br/>• State Consumer Commission: ₹50 lakh – ₹2 crore<br/>• NCDRC: above ₹2 crore<br/>Procedure: (1) Optional legal notice first (practical step); (2) File on <strong>e-daakhil.nic.in</strong> (mandatory for all Commissions now) or physically; (3) Attach: bills, receipts, warranty card, communication; (4) Nominal filing fee (₹200–₹7,500 depending on value); (5) Commission admits and serves notice; (6) Mandatory mediation attempt (Section 37); (7) Evidence and arguments; (8) Remedies: replacement, refund, compensation, punitive damages (up to ₹10 lakh for intentional unfair trade practice). Limitation: <strong>2 years from cause of action</strong> — but Section 69(2) allows condonation with valid reasons. Complaint can be filed by consumer, recognised consumer association, or Central/State Government.' },
+
+]; // end BOT_KB
+
+let _botCurrentCat = null;
+
+// ── Enable/disable ────────────────────────────────────────────────────────
 function isChatbotEnabled(){
   return localStorage.getItem('ld_chatbot_enabled') !== 'false';
 }
 function setChatbotEnabled(val){
   localStorage.setItem('ld_chatbot_enabled', String(val));
-  if(val){
-    // Show button — create if doesn't exist, else just make visible
-    const existing = document.getElementById('chatbot-btn');
-    if(existing){ existing.style.display='flex'; }
-    else { renderChatbotButton(); }
-  } else {
-    // Hide button and close panel
-    const btn = document.getElementById('chatbot-btn');
-    if(btn) btn.style.display='none';
+  if(val) renderChatbotButton();
+  else {
+    document.getElementById('chatbot-btn')?.remove();
     document.getElementById('chatbot-panel')?.remove();
     _botOpen = false;
   }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
+// ── Init / 2-day clear ────────────────────────────────────────────────────
 function initChatbot(){
   if(!isChatbotEnabled()) return;
   const lastDate = localStorage.getItem(BOT_DATE);
@@ -6715,291 +6900,630 @@ function renderChatbotButton(){
   if(document.getElementById('chatbot-btn')) return;
   const btn = document.createElement('div');
   btn.id = 'chatbot-btn';
-  btn.innerHTML = `<i class="fas fa-robot" style="font-size:20px;"></i>`;
+  btn.innerHTML = `<i class="fas fa-balance-scale" style="font-size:18px;"></i>`;
   btn.title = 'LexDesk Assistant';
   Object.assign(btn.style, {
     position:'fixed', bottom:'24px', right:'24px', zIndex:'8888',
     width:'50px', height:'50px', borderRadius:'50%',
-    background:'var(--navy)', border:'2px solid var(--gold)',
+    background:'rgba(4,8,22,0.90)', border:'2px solid var(--gold)',
     color:'var(--gold)', display:'flex', alignItems:'center', justifyContent:'center',
-    cursor:'pointer', boxShadow:'0 4px 18px rgba(0,0,0,.32)',
-    userSelect:'none', flexShrink:'0'
+    cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,.40), 0 0 0 4px rgba(212,168,67,.08)',
+    backdropFilter:'blur(20px)', userSelect:'none', transition:'transform .15s, box-shadow .15s',
   });
+  btn.onmouseover = ()=>{ btn.style.transform='scale(1.08)'; btn.style.boxShadow='0 6px 28px rgba(0,0,0,.50), 0 0 0 6px rgba(212,168,67,.14)'; };
+  btn.onmouseout  = ()=>{ btn.style.transform=''; btn.style.boxShadow='0 4px 20px rgba(0,0,0,.40), 0 0 0 4px rgba(212,168,67,.08)'; };
   makeBotDraggable(btn);
   document.body.appendChild(btn);
 }
 
 function makeBotDraggable(el){
   let sx,sy,ex,ey,dragging=false,moved=false;
-  el.addEventListener('pointerdown', e=>{
+  el.addEventListener('pointerdown',e=>{
     dragging=true; moved=false;
     sx=e.clientX; sy=e.clientY;
     ex=parseInt(el.style.right)||24; ey=parseInt(el.style.bottom)||24;
     e.preventDefault();
   });
-  window.addEventListener('pointermove', e=>{
-    if(!dragging) return;
+  window.addEventListener('pointermove',e=>{
+    if(!dragging)return;
     const dx=sx-e.clientX, dy=sy-e.clientY;
     if(Math.abs(dx)+Math.abs(dy)>6) moved=true;
     el.style.right  = Math.max(0,ex+dx)+'px';
     el.style.bottom = Math.max(0,ey+dy)+'px';
-    // Move panel with button
     const p=document.getElementById('chatbot-panel');
     if(p){ p.style.right=el.style.right; p.style.bottom=(parseInt(el.style.bottom)+58)+'px'; }
   });
-  window.addEventListener('pointerup', ()=>{ dragging=false; });
-  el.addEventListener('click', e=>{
-    if(moved){ moved=false; return; }
+  window.addEventListener('pointerup',()=>{ dragging=false; });
+  el.addEventListener('click',e=>{
+    if(moved){moved=false;return;}
     toggleChatbot();
   });
 }
 
+let _botOpen=false;
 function toggleChatbot(){
   const p=document.getElementById('chatbot-panel');
-  if(p){ p.remove(); _botOpen=false; }
-  else { openChatbot(); _botOpen=true; }
+  if(p){p.remove();_botOpen=false;}else{openChatbot();_botOpen=true;}
 }
 
-// ── Panel ─────────────────────────────────────────────────────────────────
+// ── Open chat panel ───────────────────────────────────────────────────────
 function openChatbot(){
   if(document.getElementById('chatbot-panel')) return;
-  const history = JSON.parse(localStorage.getItem(BOT_KEY)||'[]');
-  const btn = document.getElementById('chatbot-btn');
-  const bR = parseInt(btn?.style.right)||24;
-  const bB = parseInt(btn?.style.bottom)||24;
+  _botCurrentCat=null;
+  const history=JSON.parse(localStorage.getItem(BOT_KEY)||'[]');
+  const btn=document.getElementById('chatbot-btn');
+  const bR=parseInt(btn?.style.right)||24;
+  const bB=parseInt(btn?.style.bottom)||24;
 
-  const panel = document.createElement('div');
-  panel.id = 'chatbot-panel';
-  // Mobile-responsive: full-width on small screens, floating on desktop
-  const isMobile = window.innerWidth <= 500;
-  const panelW   = isMobile ? (window.innerWidth - 16) : 350;
-  const panelR   = isMobile ? 8 : Math.min(bR, window.innerWidth - panelW - 8);
-  const panelB   = isMobile ? bB + 58 : bB + 58;
-  Object.assign(panel.style, {
-    position:'fixed',
-    bottom: panelB+'px',
-    right:  panelR+'px',
-    zIndex:'8889',
-    width:  panelW+'px',
-    maxHeight: isMobile ? (window.innerHeight * 0.75)+'px' : '520px',
-    background:'var(--bg-card)', borderRadius:'16px',
-    boxShadow:'0 8px 40px rgba(0,0,0,.22)', border:'1px solid var(--border)',
-    display:'flex', flexDirection:'column', overflow:'hidden'
+  const panel=document.createElement('div');
+  panel.id='chatbot-panel';
+  Object.assign(panel.style,{
+    position:'fixed', bottom:(bB+58)+'px', right:bR+'px',
+    zIndex:'8889', width:'340px', maxHeight:'520px',
+    borderRadius:'16px', overflow:'hidden', display:'flex', flexDirection:'column',
   });
 
-  panel.innerHTML = `
-    <div style="background:var(--navy);padding:13px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
-      <div style="width:32px;height:32px;border-radius:50%;background:rgba(201,168,76,.18);
-        display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;">
-        <i class="fas fa-balance-scale" style="font-size:14px;"></i>
+  const cats=[...new Set(BOT_KB.map(k=>k.cat))];
+  const totalQ=BOT_KB.length;
+
+  panel.innerHTML=`
+    <!-- Header -->
+    <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+         border-bottom:1px solid rgba(255,255,255,.10);">
+      <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;
+           display:flex;align-items:center;justify-content:center;
+           background:rgba(212,168,67,.18);border:1px solid rgba(212,168,67,.35);">
+        <i class="fas fa-balance-scale" style="font-size:13px;color:var(--gold);"></i>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="color:#fff;font-weight:600;font-size:13.5px;line-height:1;">LexDesk Assistant</div>
-        <div style="color:rgba(255,255,255,.4);font-size:10.5px;margin-top:2px;">System help · Indian law · Always here</div>
+        <div style="font-weight:600;font-size:13.5px;line-height:1;">LexDesk Assistant</div>
+        <div style="font-size:10.5px;opacity:.40;margin-top:2px;">${totalQ} Q&amp;As · Indian Law &amp; System</div>
       </div>
       <button onclick="toggleChatbot()"
-        style="background:none;border:none;color:rgba(255,255,255,.45);font-size:19px;
-               cursor:pointer;padding:0;line-height:1;flex-shrink:0;">&times;</button>
+        style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+               color:rgba(255,255,255,.55);width:28px;height:28px;border-radius:7px;
+               cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+               line-height:1;">&times;</button>
     </div>
 
-    <div id="bot-messages" style="flex:1;overflow-y:auto;padding:14px 12px;background:transparent;
-      display:flex;flex-direction:column;gap:10px;
-      scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
+    <!-- Messages -->
+    <div id="bot-messages" style="flex:1;overflow-y:auto;padding:14px 12px;
+      display:flex;flex-direction:column;gap:9px;
+      scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;">
       ${history.length
-        ? history.map(m => renderBotBubble(m)).join('')
-        : renderBotBubble({role:'bot', content:`Hi there! 👋 I'm your LexDesk assistant.<br/>I can help you <strong>use the system</strong> and answer <strong>Indian law questions</strong>.<br/><br/>Try typing a question, or pick one below:`})}
+        ? history.map(m=>renderBotBubble(m)).join('')
+        : renderBotBubble({role:'bot',content:'Hi! I can help you <strong>use LexDesk</strong> or answer <strong>Indian law questions</strong> — BNS, GST, Companies Act, Family Law, and more.<br/><br/>Type a question or pick a topic below.'})}
     </div>
 
-    ${!history.length ? `
-    <div id="bot-suggestions" style="padding:0 12px 10px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;">
-      ${BOT_SUGGESTIONS.map(s=>`<button onclick="botAskSuggestion(this)" data-q="${escHtml(s)}"
-        style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;
-               padding:5px 12px;font-size:11.5px;cursor:pointer;color:var(--text-secondary);
-               transition:all .15s;"
-        onmouseover="this.style.background='var(--gold-pale)';this.style.borderColor='var(--gold)'"
-        onmouseout="this.style.background='var(--bg)';this.style.borderColor='var(--border)'"
-        >${escHtml(s)}</button>`).join('')}
-    </div>` : ''}
+    <!-- Quick-pick category chips -->
+    <div id="bot-chips" style="padding:6px 10px;display:flex;flex-wrap:wrap;gap:5px;
+         border-top:1px solid rgba(255,255,255,.08);max-height:90px;overflow-y:auto;">
+      ${cats.map(cat=>`
+        <button onclick="botShowCategory('${escHtml(cat)}')"
+          style="padding:4px 11px;border-radius:20px;font-size:11px;cursor:pointer;
+                 background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+                 color:rgba(255,255,255,.60);transition:all .13s;white-space:nowrap;"
+          onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.color='#fff'"
+          onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.60)'"
+        >${cat}</button>`).join('')}
+    </div>
 
-    <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.12);flex-shrink:0;background:rgba(255,255,255,.04);">
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input id="bot-input" type="text" placeholder="Ask me anything…"
-          style="flex:1;border:1px solid var(--border);border-radius:22px;
-                 padding:9px 16px;font-size:13px;outline:none;
-                 background:rgba(255,255,255,.10);color:#dde6ff;
-                 transition:border .15s;"
+    <!-- Input -->
+    <div style="padding:10px 10px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;">
+      <div style="display:flex;gap:7px;align-items:center;">
+        <input id="bot-input" type="text" placeholder="Ask anything…"
+          style="flex:1;padding:9px 14px;border-radius:22px;font-size:13px;outline:none;
+                 background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);
+                 color:#dde6ff;"
           onfocus="this.style.borderColor='var(--gold)'"
-          onblur="this.style.borderColor='var(--border)'"
+          onblur="this.style.borderColor='rgba(255,255,255,.13)'"
           onkeydown="if(event.key==='Enter')botSend()"/>
         <button onclick="botSend()"
-          style="width:38px;height:38px;border-radius:50%;background:var(--navy);
-                 border:none;color:var(--gold);cursor:pointer;flex-shrink:0;
-                 display:flex;align-items:center;justify-content:center;font-size:15px;">
-          <i class="fas fa-paper-plane"></i>
+          style="width:36px;height:36px;border-radius:50%;flex-shrink:0;cursor:pointer;border:none;
+                 background:linear-gradient(135deg,var(--gold),#b8872a);
+                 color:#0d0d0d;font-size:13px;font-weight:700;display:flex;align-items:center;
+                 justify-content:center;">
+          <i class="fas fa-arrow-up"></i>
         </button>
-      </div>
-      <div style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:6px;">
-        General guidance only — not a substitute for legal advice
       </div>
     </div>`;
 
   document.body.appendChild(panel);
-  const msgs = document.getElementById('bot-messages');
-  if(msgs) msgs.scrollTop = msgs.scrollHeight;
-  setTimeout(()=>document.getElementById('bot-input')?.focus(), 100);
+  document.getElementById('bot-messages').scrollTop=9999;
+  setTimeout(()=>document.getElementById('bot-input')?.focus(),80);
+}
+
+
+function botCategoryGrid(cats){
+  if(!cats) cats=[...new Set(BOT_KB.map(k=>k.cat))];
+  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px 0;">';
+  cats.forEach(cat=>{
+    const count=BOT_KB.filter(k=>k.cat===cat).length;
+    html+=`<button onclick="botShowCategory('${escHtml(cat)}')"
+      style="display:flex;align-items:center;justify-content:space-between;gap:6px;
+             background:var(--glass);border:1px solid var(--border);
+             border-radius:9px;padding:7px 10px;font-size:12px;cursor:pointer;
+             color:var(--text-secondary);text-align:left;"
+      onmouseover="this.style.background='var(--glass-hi)'"
+      onmouseout="this.style.background='var(--glass)'">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(cat)}</span>
+      <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">${count}</span>
+    </button>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+function botShowCategory(cat){
+  _botCurrentCat=cat;
+  const chips=document.getElementById('bot-chips');
+  if(!chips) return;
+  const items=BOT_KB.filter(k=>k.cat===cat);
+  chips.innerHTML=`
+    <button onclick="botBackToCategories()"
+      style="padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;
+             background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+             color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;white-space:nowrap;">
+      <i class="fas fa-arrow-left" style="font-size:9px;"></i> Back
+    </button>
+    ${items.map((item,i)=>`
+      <button data-idx="${BOT_KB.indexOf(item)}"
+        onclick="botAnswer('${escHtml(cat)}',parseInt(this.dataset.idx))"
+        style="padding:4px 11px;border-radius:20px;font-size:11px;cursor:pointer;
+               background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+               color:rgba(255,255,255,.60);transition:all .13s;white-space:nowrap;"
+        onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.color='#fff'"
+        onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.60)'"
+        >${escHtml(item.q)}</button>`).join('')}`;
+}
+
+
+
+function botBackToCategories(){
+  _botCurrentCat=null;
+  const area=document.getElementById('bot-question-area');
+  if(area) area.innerHTML=botCategoryGrid();
+  const inp=document.getElementById('bot-input');
+  if(inp) inp.value='';
 }
 
 function renderBotBubble(m){
-  const isMine = m.role==='user';
-  const isLight = document.documentElement.getAttribute('data-theme')==='light';
-  const userBg    = isLight ? '#0f2044'               : 'rgba(14,165,233,.28)';
-  const userColor = '#ffffff';
-  const botBg     = isLight ? 'rgba(0,0,0,.05)'       : 'rgba(255,255,255,.11)';
-  const botColor  = isLight ? '#0f1629'                : '#dde6ff';
-  const botBorder = isLight ? '1px solid rgba(0,0,0,.10)' : '1px solid rgba(255,255,255,.13)';
+  const isMine=m.role==='user';
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  const userBg   = isLight ? 'rgba(0,0,0,.75)' : 'rgba(212,168,67,.20)';
+  const userColor= '#fff';
+  const botBg    = isLight ? 'rgba(255,255,255,.80)' : 'rgba(255,255,255,.09)';
+  const botColor = isLight ? '#0d1526' : '#e8eeff';
+  const botBorder= isLight ? '1px solid rgba(0,0,0,.09)' : '1px solid rgba(255,255,255,.11)';
   return `<div style="display:flex;flex-direction:column;align-items:${isMine?'flex-end':'flex-start'};">
-    <div style="max-width:88%;padding:9px 13px;border-radius:${isMine?'16px 16px 4px 16px':'16px 16px 16px 4px'};
-      background:${isMine?userBg:botBg};color:${isMine?userColor:botColor};
-      font-size:13px;line-height:1.58;
+    <div style="max-width:88%;padding:9px 13px;word-break:break-word;
+      border-radius:${isMine?'16px 16px 4px 16px':'16px 16px 16px 4px'};
+      background:${isMine?userBg:botBg};
+      color:${isMine?userColor:botColor};
+      font-size:13px;line-height:1.60;
       ${!isMine?`border:${botBorder};`:''}">${m.content}</div>
   </div>`;
 }
-function botAddMessage(role, content){
-  const msgs = document.getElementById('bot-messages');
-  if(!msgs) return;
-  // Hide suggestions once user sends first message
-  document.getElementById('bot-suggestions')?.remove();
-  msgs.insertAdjacentHTML('beforeend', renderBotBubble({role,content}));
-  msgs.scrollTop = msgs.scrollHeight;
-  // Persist
-  const history = JSON.parse(localStorage.getItem(BOT_KEY)||'[]');
+
+function botAddMessage(role,content){
+  const msgs=document.getElementById('bot-messages');
+  if(!msgs)return;
+  document.getElementById('bot-question-area')?.querySelectorAll('.bot-suggestions')?.forEach(el=>el.remove());
+  msgs.insertAdjacentHTML('beforeend',renderBotBubble({role,content}));
+  msgs.scrollTop=msgs.scrollHeight;
+  const history=JSON.parse(localStorage.getItem(BOT_KEY)||'[]');
   history.push({role,content});
-  if(history.length>100) history.splice(0,history.length-100);
-  localStorage.setItem(BOT_KEY, JSON.stringify(history));
+  if(history.length>80) history.splice(0,history.length-80);
+  localStorage.setItem(BOT_KEY,JSON.stringify(history));
 }
 
-function botAskSuggestion(btn){
-  const q = btn.dataset.q;
-  if(!q) return;
-  document.getElementById('bot-suggestions')?.remove();
-  botAskQuestion(q);
-}
-
-function botSend(){
-  const input = document.getElementById('bot-input');
-  const text = (input?.value||'').trim();
-  if(!text) return;
-  input.value='';
-  botAskQuestion(text);
-}
-
-// ── Match user query against knowledge base ───────────────────────────────
-function botFindAnswer(query){
-  const q = query.toLowerCase();
-  let best = null, bestScore = 0;
-
-  BOT_KB.forEach(entry=>{
-    let score = 0;
-    // Keyword matching (higher weight)
-    entry.keywords.forEach(kw=>{
-      if(q.includes(kw)) score += 3;
-      else {
-        // Partial word matching
-        const words = kw.split(' ');
-        words.forEach(w=>{ if(w.length>3&&q.includes(w)) score+=1; });
-      }
-    });
-    // Question text matching
-    const qWords = entry.q.toLowerCase().split(/\W+/).filter(w=>w.length>3);
-    qWords.forEach(w=>{ if(q.includes(w)) score+=1; });
-    if(score>bestScore){ bestScore=score; best=entry; }
-  });
-
-  return bestScore>=2 ? best : null;
-}
-
-// ── Typing indicator ──────────────────────────────────────────────────────
 function botShowTyping(){
   const msgs=document.getElementById('bot-messages');
-  if(!msgs) return;
+  if(!msgs)return;
   const el=document.createElement('div');
-  el.id='bot-typing';
-  el.style.cssText='display:flex;align-items:center;gap:4px;padding:8px 13px;background:var(--bg);border:1px solid var(--border);border-radius:16px 16px 16px 4px;width:fit-content;';
-  el.innerHTML=`<span style="width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:botdot 1.2s infinite;"></span>
-    <span style="width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:botdot 1.2s .2s infinite;"></span>
-    <span style="width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:botdot 1.2s .4s infinite;"></span>`;
-  msgs.appendChild(el);
-  msgs.scrollTop=msgs.scrollHeight;
-  // Inject keyframes once
-  if(!document.getElementById('bot-style')){
-    const s=document.createElement('style');
-    s.id='bot-style';
-    s.textContent='@keyframes botdot{0%,80%,100%{transform:scale(0.7);opacity:.5}40%{transform:scale(1);opacity:1}}';
+  el.id='bot-typing'; el.style.cssText='display:flex;align-items:center;gap:4px;padding:8px 13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);border-radius:16px 16px 16px 4px;width:fit-content;';
+  el.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);animation:botdot 1.2s infinite;"></span><span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);animation:botdot 1.2s .2s infinite;"></span><span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);animation:botdot 1.2s .4s infinite;"></span>';
+  msgs.appendChild(el); msgs.scrollTop=msgs.scrollHeight;
+  if(!document.getElementById('bot-anim-style')){
+    const s=document.createElement('style'); s.id='bot-anim-style';
+    s.textContent='@keyframes botdot{0%,80%,100%{transform:scale(.7);opacity:.4}40%{transform:scale(1);opacity:1}}';
     document.head.appendChild(s);
   }
 }
 function botHideTyping(){ document.getElementById('bot-typing')?.remove(); }
 
-// ── Main ask function ─────────────────────────────────────────────────────
-function botAskQuestion(query){
-  botAddMessage('user', escHtml(query));
-  botShowTyping();
+function botFindAnswer(query){
+  const q=query.toLowerCase();
+  let best=null, bestScore=0;
+  BOT_KB.forEach(entry=>{
+    let score=0;
+    entry.keywords.forEach(kw=>{ if(q.includes(kw)) score+=3; else { kw.split(' ').forEach(w=>{ if(w.length>3&&q.includes(w)) score+=1; }); } });
+    entry.q.toLowerCase().split(/\W+/).filter(w=>w.length>3).forEach(w=>{ if(q.includes(w)) score+=1; });
+    if(score>bestScore){bestScore=score;best=entry;}
+  });
+  return bestScore>=2?best:null;
+}
 
-  // Short delay to feel natural
+function botSend(){
+  const inp=document.getElementById('bot-input');
+  const text=(inp?.value||'').trim();
+  if(!text)return;
+  inp.value='';
+  botAskQuestion(text);
+}
+
+function botAskQuestion(query){
+  botAddMessage('user',escHtml(query));
+  botShowTyping();
   setTimeout(()=>{
     botHideTyping();
-    const match = botFindAnswer(query);
+    const match=botFindAnswer(query);
     if(match){
-      botAddMessage('bot', match.a);
-      // Offer related suggestions
-      const related = BOT_KB
-        .filter(e=>e!==match && e.cat===match.cat)
-        .slice(0,3);
+      botAddMessage('bot',match.a);
+      const related=BOT_KB.filter(e=>e!==match&&e.cat===match.cat).slice(0,3);
       if(related.length){
         const msgs=document.getElementById('bot-messages');
         if(msgs){
           const div=document.createElement('div');
-          div.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;';
-          div.innerHTML=related.map(r=>`<button onclick="botAskSuggestion(this)" data-q="${escHtml(r.q)}"
-            style="background:var(--bg);border:1px solid var(--border);border-radius:16px;
-                   padding:4px 10px;font-size:11px;cursor:pointer;color:var(--text-secondary);"
-            onmouseover="this.style.background='var(--gold-pale)'"
-            onmouseout="this.style.background='rgba(255,255,255,.09)'">${escHtml(r.q)}</button>`).join('');
+          div.className='bot-suggestions';
+          div.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;';
+          let chipHtml='';
+          related.forEach(r=>{
+            const ridx=BOT_KB.indexOf(r);
+            chipHtml+=`<button data-cat="${escHtml(r.cat)}" data-idx="${ridx}"
+              onclick="botAnswer(this.dataset.cat,parseInt(this.dataset.idx))"
+              style="background:var(--glass);border:1px solid var(--border);
+                     border-radius:16px;padding:4px 11px;font-size:11px;cursor:pointer;color:var(--text-muted);"
+              onmouseover="this.style.background='var(--glass-hi)'"
+              onmouseout="this.style.background='var(--glass)'"
+              >${escHtml(r.q)}</button>`;
+          });
+          div.innerHTML=chipHtml;
           msgs.appendChild(div);
           msgs.scrollTop=msgs.scrollHeight;
         }
       }
     } else {
-      // Fuzzy fallback — suggest closest matches
       const tokens=query.toLowerCase().split(/\W+/).filter(w=>w.length>2);
-      const candidates=BOT_KB.filter(e=>
-        tokens.some(t=>e.keywords.some(kw=>kw.includes(t))||e.q.toLowerCase().includes(t))
-      ).slice(0,4);
+      const candidates=BOT_KB.filter(e=>tokens.some(t=>e.keywords.some(kw=>kw.includes(t))||e.q.toLowerCase().includes(t))).slice(0,4);
       if(candidates.length){
+        botAddMessage('bot','I didn\'t catch that exactly. Did you mean one of these?');
         const msgs=document.getElementById('bot-messages');
         if(msgs){
-          msgs.insertAdjacentHTML('beforeend',renderBotBubble({role:'bot',
-            content:`I'm not sure I caught that exactly. Did you mean one of these?`}));
           const div=document.createElement('div');
-          div.style.cssText='display:flex;flex-direction:column;gap:5px;margin-top:2px;';
-          div.innerHTML=candidates.map(r=>`<button onclick="botAskSuggestion(this)" data-q="${escHtml(r.q)}"
-            style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:10px;
-                   padding:7px 11px;font-size:12px;cursor:pointer;color:var(--text-primary);text-align:left;"
-            onmouseover="this.style.background='var(--gold-pale)'"
-            onmouseout="this.style.background='rgba(255,255,255,.09)'">${escHtml(r.q)}</button>`).join('');
+          div.style.cssText='display:flex;flex-direction:column;gap:5px;margin-top:4px;';
+          let candHtml='';
+          candidates.forEach(r=>{
+            const ridx=BOT_KB.indexOf(r);
+            candHtml+=`<button data-cat="${escHtml(r.cat)}" data-idx="${ridx}"
+              onclick="botAnswer(this.dataset.cat,parseInt(this.dataset.idx))"
+              style="text-align:left;background:var(--glass);border:1px solid var(--border);
+                     border-radius:9px;padding:7px 10px;font-size:12.5px;cursor:pointer;
+                     color:var(--text-secondary);width:100%;margin-bottom:4px;"
+              onmouseover="this.style.background='var(--glass-hi)'"
+              onmouseout="this.style.background='var(--glass)'">${escHtml(r.q)}</button>`;
+          });
+          div.innerHTML=candHtml;
           msgs.appendChild(div);
           msgs.scrollTop=msgs.scrollHeight;
         }
       } else {
-        botAddMessage('bot',
-          `I don't have a specific answer for that yet. Try asking about:<br/>
-          • System features (clients, tasks, finances, notes, portal)<br/>
-          • Civil, criminal, cyber, family, labour, tax, or IP law<br/>
-          • Constitutional or consumer law<br/><br/>
-          Or rephrase your question and I'll do my best!`);
+        botAddMessage('bot',`I don\'t have a specific answer for that yet.<br/>Try browsing by category, or rephrase — e.g. "bail under BNSS", "GST on legal services", "create a client".`);
+        const area=document.getElementById('bot-question-area');
+        if(area) area.innerHTML=botCategoryGrid();
       }
     }
-  }, 600+Math.random()*400);  // 600-1000ms — feels natural
+  },500+Math.random()*400);
+}
+
+function botAnswer(cat,idx){
+  const item=BOT_KB[idx];
+  if(!item) return;
+  botAddMessage('user',escHtml(item.q));
+  botShowTyping();
+  setTimeout(()=>{
+    botHideTyping();
+    botAddMessage('bot',item.a);
+    // Offer 2-3 related questions as chips
+    const related=BOT_KB.filter(e=>e!==item&&e.cat===item.cat).slice(0,3);
+    if(related.length){
+      const msgs=document.getElementById('bot-messages');
+      if(msgs){
+        const div=document.createElement('div');
+        div.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;';
+        div.innerHTML=related.map(r=>`
+          <button data-idx="${BOT_KB.indexOf(r)}" data-cat="${escHtml(r.cat)}"
+            onclick="botAnswer(this.dataset.cat,parseInt(this.dataset.idx))"
+            style="padding:4px 10px;border-radius:16px;font-size:10.5px;cursor:pointer;
+                   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);
+                   color:rgba(255,255,255,.55);"
+            onmouseover="this.style.background='rgba(255,255,255,.14)';this.style.color='#fff'"
+            onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.55)'"
+          >${escHtml(r.q)}</button>`).join('');
+        msgs.appendChild(div);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+    }
+    // Reset chips to categories
+    if(!_botCurrentCat) botBackToCategories();
+  },400+Math.random()*300);
+}
+
+</script><script>
+// ══════════════════════════════════════════════════════
+//  LEXDESK THEME SYSTEM  v2
+//  Users pick: base mode + backdrop + glass tint + contrast
+//  Persistence: localStorage (instant) + profiles.theme_config
+//  initTheme() runs at boot before anything renders.
+//  Re-applied after login from profile.
+// ══════════════════════════════════════════════════════
+
+// ── Backdrop options ─────────────────────────────────
+// Orbs: warm, complementary tones — no harsh blue
+const THEME_BACKDROPS = [
+  { id:'midnight', label:'Midnight', icon:'🌑',
+    dark:'#06091A', light:'#F0F4FF',
+    orbs:['#1e3a6e','#0e6655','#7a3a0a','#142850'] },
+  { id:'charcoal', label:'Charcoal', icon:'⚫',
+    dark:'#0c0c0c', light:'#f4f4f4',
+    orbs:['#2d2d2d','#1a1a2e','#2c1810','#1a2030'] },
+  { id:'navy',     label:'Navy',     icon:'🌊',
+    dark:'#02101e', light:'#EFF6FF',
+    orbs:['#1a3460','#0a4f5e','#1a2e1a','#0e1e40'] },
+  { id:'forest',   label:'Forest',   icon:'🌲',
+    dark:'#010d06', light:'#F0FDF4',
+    orbs:['#0f3d1c','#065040','#1a3010','#0a2818'] },
+  { id:'plum',     label:'Plum',     icon:'🫐',
+    dark:'#0c0318', light:'#FAF5FF',
+    orbs:['#3d1060','#321070','#501040','#200840'] },
+  { id:'rose',     label:'Rose',     icon:'🌹',
+    dark:'#170408', light:'#FFF1F2',
+    orbs:['#6b0f28','#7a0f3a','#4a0f20','#500818'] },
+];
+
+// ── Glass tint options ────────────────────────────────
+const THEME_TINTS = [
+  { id:'neutral', label:'Neutral Glass',
+    dark:'rgba(255,255,255,0.08)', light:'rgba(255,255,255,0.58)' },
+  { id:'warm',    label:'Warm Glass',
+    dark:'rgba(255,235,200,0.09)', light:'rgba(255,248,235,0.62)' },
+  { id:'cool',    label:'Cool Glass',
+    dark:'rgba(210,225,255,0.08)', light:'rgba(230,240,255,0.60)' },
+  { id:'frost',   label:'Frosted Glass',
+    dark:'rgba(230,245,255,0.11)', light:'rgba(248,252,255,0.68)' },
+  { id:'smoke',   label:'Smoked Glass',
+    dark:'rgba(160,170,180,0.10)', light:'rgba(235,238,242,0.65)' },
+];
+
+// ── Contrast options ──────────────────────────────────
+const THEME_CONTRASTS = [
+  { id:'standard', label:'Standard',
+    darkText:'#F0F4FF',  darkMuted:'rgba(255,255,255,.30)',
+    lightText:'#0D1526', lightMuted:'rgba(0,0,0,.36)' },
+  { id:'high',     label:'High',
+    darkText:'#FFFFFF',  darkMuted:'rgba(255,255,255,.52)',
+    lightText:'#000000', lightMuted:'rgba(0,0,0,.52)' },
+  { id:'soft',     label:'Soft',
+    darkText:'#C8D4E8',  darkMuted:'rgba(255,255,255,.22)',
+    lightText:'#2D3A52', lightMuted:'rgba(0,0,0,.26)' },
+];
+
+// ── Storage ───────────────────────────────────────────
+function getThemeConfig(){
+  try{
+    const s=localStorage.getItem('ld_theme_config');
+    if(s){ const p=JSON.parse(s); if(p&&p.mode) return p; }
+  }catch(e){}
+  return {mode:'dark', backdrop:'midnight', tint:'neutral', contrast:'standard'};
+}
+function saveThemeConfig(cfg, toDB=false){
+  localStorage.setItem('ld_theme_config', JSON.stringify(cfg));
+  if(toDB && typeof S!=='undefined' && S?.user?.id && typeof sb!=='undefined'){
+    sb.from('profiles').update({theme_config:cfg}).eq('id',S.user.id);
+  }
+}
+
+// ── Core apply ────────────────────────────────────────
+function applyThemeConfig(cfg){
+  const c = cfg || getThemeConfig();
+  const {mode='dark', backdrop='midnight', tint='neutral', contrast='standard'} = c;
+  const bd  = THEME_BACKDROPS.find(b=>b.id===backdrop) || THEME_BACKDROPS[0];
+  const tn  = THEME_TINTS.find(t=>t.id===tint)         || THEME_TINTS[0];
+  const con = THEME_CONTRASTS.find(x=>x.id===contrast) || THEME_CONTRASTS[0];
+  const isLight = mode==='light';
+
+  // 1. Mode attribute
+  document.documentElement.setAttribute('data-theme', isLight?'light':'');
+
+  // 2. Dynamic CSS vars — injected AFTER the static CSS so they override correctly
+  let el = document.getElementById('ld-theme-vars');
+  if(!el){
+    el = document.createElement('style');
+    el.id = 'ld-theme-vars';
+    // Append to end of head so it wins specificity
+    document.head.appendChild(el);
+  }
+
+  const bgBase  = isLight ? bd.light : bd.dark;
+  const glassBg = isLight ? tn.light : tn.dark;
+  const textMain= isLight ? con.lightText  : con.darkText;
+  const textMute= isLight ? con.lightMuted : con.darkMuted;
+
+  el.textContent = `
+    :root {
+      --text-primary: ${textMain} !important;
+      --text-muted:   ${textMute} !important;
+    }
+    body { background-color: ${bgBase} !important; }
+    .lexdesk-orbs { background: ${bgBase} !important; }
+    html[data-theme="light"] .lexdesk-orbs { background: ${bgBase} !important; }
+
+    /* Orb colours */
+    .lexdesk-orbs span:nth-child(1){ background: ${bd.orbs[0]} !important; }
+    .lexdesk-orbs span:nth-child(2){ background: ${bd.orbs[1]} !important; }
+    .lexdesk-orbs span:nth-child(3){ background: ${bd.orbs[2]} !important; }
+    .lexdesk-orbs span:nth-child(4){ background: ${bd.orbs[3]} !important; opacity:.4; }
+
+    /* Light mode orb softening */
+    html[data-theme="light"] .lexdesk-orbs span:nth-child(1){ background: ${bd.orbs[0]}99 !important; }
+    html[data-theme="light"] .lexdesk-orbs span:nth-child(2){ background: ${bd.orbs[1]}99 !important; }
+    html[data-theme="light"] .lexdesk-orbs span:nth-child(3){ background: ${bd.orbs[2]}99 !important; }
+    html[data-theme="light"] .lexdesk-orbs span:nth-child(4){ background: ${bd.orbs[3]}66 !important; }
+
+    /* Glass tint */
+    .card, .glass { background: ${glassBg} !important; }
+    .chat-sidebar,
+    #chatbot-panel { background: ${isLight?'rgba(255,255,255,0.96)':'rgba(4,8,22,0.96)'} !important; }
+  `;
+}
+
+// ── Boot: apply before anything renders ──────────────
+function initTheme(){
+  applyThemeConfig(getThemeConfig());
+}
+
+// ── After login: use profile preference ──────────────
+function applyProfileTheme(profile){
+  if(profile?.theme_config && profile.theme_config.mode){
+    saveThemeConfig(profile.theme_config, false);
+    applyThemeConfig(profile.theme_config);
+  } else {
+    applyThemeConfig(getThemeConfig());
+  }
+}
+
+// ── Compat stubs ──────────────────────────────────────
+function getTheme(){ return getThemeConfig().mode; }
+function applyTheme(mode, save=false){
+  const cfg=getThemeConfig(); cfg.mode=mode;
+  if(save) saveThemeConfig(cfg,true);
+  applyThemeConfig(cfg);
+}
+function toggleTheme(btn){
+  const cfg=getThemeConfig();
+  const nowDark=!btn.classList.contains('on');
+  btn.classList.toggle('on',nowDark);
+  cfg.mode=nowDark?'dark':'light';
+  saveThemeConfig(cfg,true); applyThemeConfig(cfg);
+  showToast(nowDark?'🌑 Dark mode':'☀ Light mode','info');
+  renderThemeCustomiser();
+}
+
+// ── Settings UI renderer ──────────────────────────────
+function renderThemeCustomiser(){
+  const cnt=document.getElementById('theme-customiser');
+  if(!cnt) return;
+  const cfg=getThemeConfig();
+  const {mode,backdrop,tint,contrast}=cfg;
+
+  // Shared button style helper
+  const sel=(active)=>active
+    ? 'border:2px solid var(--gold);background:var(--gold-dim);color:var(--gold);'
+    : 'border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--text-secondary);';
+
+  cnt.innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:22px;">
+
+    <!-- Mode -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+           color:var(--text-muted);margin-bottom:10px;">Base Mode</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="themeSet('mode','dark')"
+          style="${sel(mode==='dark')}flex:1;padding:11px;border-radius:12px;cursor:pointer;font-size:13.5px;font-weight:500;transition:all .18s;">
+          🌑 Dark Glass
+        </button>
+        <button onclick="themeSet('mode','light')"
+          style="${sel(mode==='light')}flex:1;padding:11px;border-radius:12px;cursor:pointer;font-size:13.5px;font-weight:500;transition:all .18s;">
+          ☀ Light Glass
+        </button>
+      </div>
+    </div>
+
+    <!-- Backdrop -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+           color:var(--text-muted);margin-bottom:10px;">Backdrop Colour</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        ${THEME_BACKDROPS.map(b=>`
+          <button onclick="themeSet('backdrop','${b.id}')"
+            style="${sel(backdrop===b.id)}border-radius:12px;padding:10px 8px;cursor:pointer;
+              font-size:12.5px;font-weight:500;transition:all .18s;display:flex;align-items:center;
+              gap:7px;">
+            <span style="width:13px;height:13px;border-radius:50%;flex-shrink:0;
+              background:${mode==='light'?b.light:b.dark};
+              border:1px solid rgba(255,255,255,.25);"></span>
+            ${b.icon} ${b.label}
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Glass Tint -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+           color:var(--text-muted);margin-bottom:10px;">Glass Tint</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${THEME_TINTS.map(t=>`
+          <button onclick="themeSet('tint','${t.id}')"
+            style="${sel(tint===t.id)}border-radius:10px;padding:9px 14px;cursor:pointer;
+              font-size:12.5px;font-weight:500;transition:all .18s;display:flex;align-items:center;
+              justify-content:space-between;gap:8px;">
+            <span>${t.label}</span>
+            <span style="width:60px;height:16px;border-radius:6px;
+              background:${mode==='light'?t.light:t.dark};
+              border:1px solid rgba(255,255,255,.18);display:inline-block;"></span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Contrast -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+           color:var(--text-muted);margin-bottom:10px;">Text Contrast</div>
+      <div style="display:flex;gap:8px;">
+        ${THEME_CONTRASTS.map(c=>`
+          <button onclick="themeSet('contrast','${c.id}')"
+            style="${sel(contrast===c.id)}flex:1;padding:9px;border-radius:10px;cursor:pointer;
+              font-size:12.5px;font-weight:500;transition:all .18s;">
+            ${c.label}
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Reset -->
+    <button onclick="themeReset()"
+      style="padding:9px;border-radius:10px;background:rgba(255,255,255,.04);
+        border:1px solid rgba(255,255,255,.10);color:var(--text-muted);font-size:12.5px;
+        cursor:pointer;transition:all .15s;width:100%;"
+      onmouseover="this.style.color='var(--danger)';this.style.borderColor='rgba(248,113,113,.30)'"
+      onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='rgba(255,255,255,.10)'">
+      <i class="fas fa-undo" style="margin-right:6px;"></i>Reset to Default
+    </button>
+
+  </div>`;
+}
+
+// ── Single-call setter ────────────────────────────────
+function themeSet(key, val){
+  const cfg=getThemeConfig();
+  cfg[key]=val;
+  saveThemeConfig(cfg,true);
+  applyThemeConfig(cfg);
+  // Sync mode toggle in settings header
+  if(key==='mode'){
+    const btn=document.getElementById('theme-toggle');
+    if(btn) btn.classList.toggle('on', val==='dark');
+  }
+  renderThemeCustomiser();
+}
+
+function themeReset(){
+  const def={mode:'dark',backdrop:'midnight',tint:'neutral',contrast:'standard'};
+  saveThemeConfig(def,true); applyThemeConfig(def);
+  const btn=document.getElementById('theme-toggle');
+  if(btn) btn.classList.toggle('on',true);
+  renderThemeCustomiser();
+  showToast('Theme reset to default.','info');
 }
 </script>
 <script>
@@ -7047,8 +7571,12 @@ document.addEventListener('click',e=>{
 // ════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════
+// Apply theme immediately (before DOMContentLoaded) to prevent flash
+if(typeof initTheme==='function') initTheme();
+
 window.addEventListener('DOMContentLoaded',async ()=>{
-  initTheme();  // apply saved theme before any rendering
+  // Re-apply after DOM is ready so injected styles definitely win
+  if(typeof initTheme==='function') initTheme();
   // Check for client portal mode first (before normal auth)
   const portalToken = checkPortalMode();
   if(portalToken){

@@ -4704,8 +4704,16 @@ function startPolling(){
         console.log('LexDesk Realtime: connected ✓');
       } else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
         console.warn('LexDesk Realtime: connection issue, falling back to polling');
-        // If Realtime fails, fall back to aggressive polling
-        startFallbackPolling();
+        // Safe fallback: manually poll the profile/migration check every 5 seconds
+  if (!window.fallbackPollingInterval) {
+    window.fallbackPollingInterval = setInterval(() => {
+      if (typeof checkMigrationStatus === 'function') {
+        checkMigrationStatus();
+      } else {
+        // If no custom function exists, force a page reload to try reconnecting
+        window.location.reload(); 
+      }
+    }, 5000);
       }
     });
 
